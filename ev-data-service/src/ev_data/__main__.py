@@ -60,15 +60,23 @@ def main():
 
             # Send to Redis stream
             with redis.StrictRedis(connection_pool=redis_pool) as r:
-                # Convert data to Redis stream format
+                # Convert data to Redis stream format - using new array format
                 stream_data = {
                     'timestamp': batch_data['timestamp'],
                     'location': batch_data['location'],
                     'data_provider': batch_data['data_provider'],
-                    'sessions': json.dumps(batch_data['sessions'])
+                    'session_times': json.dumps(batch_data['session_times']),
+                    'kwh_values': json.dumps(batch_data['kwh_values']),
+                    'duration_values': json.dumps(
+                        batch_data['duration_values']
+                    )
                 }
                 r.xadd(simulator.output_stream, stream_data)
-                Logger.info(f"Sent {len(batch_data['sessions'])} sessions to stream")
+                num_points = len(batch_data['session_times'])
+                Logger.info(
+                    f"Sent {num_points} data points to stream "
+                    f"(kWh and duration metrics)"
+                )
 
             # Wait before next batch (simulate real-time)
             time.sleep(60 / simulator.replay_speed)  # Adjust for replay speed
