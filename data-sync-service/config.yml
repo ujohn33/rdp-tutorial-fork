@@ -7,7 +7,7 @@ x-channels:
   # ---------------------------------------------------------------------------
   ev-sessions:
     encoding: &ev-sessions-encoding
-      _default: "JSON"
+      _default: "KeepEncoding"
       timestamp: "DatetimeString"
       sessions: "JSON"
     steps: &ev-sessions-steps
