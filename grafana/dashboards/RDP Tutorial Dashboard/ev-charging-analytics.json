@@ -291,7 +291,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  EXTRACT(hour FROM obs_time) as \"Hour\",\n  AVG(CASE WHEN dp.name = 'ev_sessions_kwh_values' THEN value END) as \"Average kWh per Session\",\n  AVG(CASE WHEN dp.name = 'ev_sessions_duration_values' THEN value END) as \"Average Duration (hours)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE obs_time >= NOW() - INTERVAL '7 days'\nGROUP BY EXTRACT(hour FROM obs_time)\nORDER BY \"Hour\"",
+          "rawSql": "SELECT\n  EXTRACT(hour FROM obs_time) as \"Hour\",\n  AVG(CASE WHEN dp.name = 'ev_sessions_kwh_values' THEN value END) as \"Average kWh per Session\",\n  AVG(CASE WHEN dp.name = 'ev_sessions_duration_values' THEN value END) as \"Average Duration (hours)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name LIKE 'ev_sessions_%'\nGROUP BY EXTRACT(hour FROM obs_time)\nORDER BY \"Hour\"",
           "refId": "A"
         }
       ],
@@ -344,7 +344,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  value as \"Session Duration (hours)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_duration_values'\n  AND obs_time >= NOW() - INTERVAL '30 days'\nORDER BY value",
+          "rawSql": "SELECT\n  value as \"Session Duration (hours)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_duration_values'\nORDER BY value",
           "refId": "A"
         }
       ],
@@ -359,8 +359,8 @@
     "list": []
   },
   "time": {
-    "from": "now-7d",
-    "to": "now"
+    "from": "2023-07-01T00:00:00.000Z",
+    "to": "2023-07-31T23:59:59.999Z"
   },
   "timepicker": {},
   "timezone": "",
