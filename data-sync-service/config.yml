@@ -9,7 +9,7 @@ x-channels:
     encoding: &ev-sessions-encoding
       _default: "JSON"
       timestamp: "JSONDatetimeString"
-      sessions: "JSONArray"
+      sessions: "JSON"
     steps: &ev-sessions-steps
       - type: "SplitByKey"
         always include: ["timestamp", "location", "data_provider"]
@@ -42,12 +42,12 @@ x-channels:
     encoding: &ev-predictions-encoding
       _default: "JSON"
       timestamp: "JSONDatetimeString"
-      hourly_timestamps: "JSONArray"
-      hourly_energy_kwh: "JSONArray"
-      hourly_duration_min: "JSONArray"
-      daily_timestamps: "JSONArray"
-      daily_energy_kwh: "JSONArray"
-      daily_duration_min: "JSONArray"
+      hourly_timestamps: "JSON"
+      hourly_energy_kwh: "JSON"
+      hourly_duration_min: "JSON"
+      daily_timestamps: "JSON"
+      daily_energy_kwh: "JSON"
+      daily_duration_min: "JSON"
     steps: &ev-predictions-steps
       - type: "SplitByKey"
         always include: ["timestamp", "location", "data_provider"]
