@@ -4,6 +4,7 @@ import pathlib
 import redis
 import time
 import yaml
+import os
 from .simulator import EVDataSimulator
 
 Logger = logging.getLogger('ev_data')
@@ -14,7 +15,9 @@ def load_redis_connection_pool(redis_config: dict) -> redis.ConnectionPool:
     host = redis_config['host']
     port = redis_config['port']
     db = redis_config['db']
-    pwd = redis_config.get('password')
+    pwd = os.getenv('REDIS_PASSWORD')
+    if not pwd:
+        pwd = redis_config.get('password')  # Fallback to config file
     Logger.info(f'Configure redis connection to {host}:{port} using db {db}')
 
     if pwd:
