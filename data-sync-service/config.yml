@@ -18,8 +18,8 @@ x-channels:
         destination key: "value"
         source output key: "metric_type"
         split keys:
-          kwh: "kwh"
-          duration_hours: "duration_hours"
+          kwh: "sessions"
+          duration_hours: "sessions"
       - type: "CachedSQLQuery"
         cache keys: ["location", "data_provider", "metric_type"]
         single value: True
@@ -32,7 +32,7 @@ x-channels:
         dp_id: "dp_id"
         obs_time: "timestamp"
         fc_time: "timestamp"
-        value: "value"
+        value: "${metric_type}"
 
   ## ---------------------------------------------------------------------------
   ## Template for EV prediction data formats
