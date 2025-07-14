@@ -5,28 +5,50 @@ x-channels:
   # ---------------------------------------------------------------------------
   # Template for EV charging session data formats
   # ---------------------------------------------------------------------------
-  ev-sessions:
+  ev-sessions-kwh:
     encoding: &ev-sessions-encoding
       _default: "KeepEncoding"
       timestamp: "KeepEncoding"
       sessions: "JSON"
       start_time: "JSONDatetimeString"
       end_time: "JSONDatetimeString"
-    steps: &ev-sessions-steps
+    steps: &ev-sessions-kwh-steps
       - type: "UnpackArrayValues"
         unpack keys: ["sessions"]
       - type: "SplitByKey"
         always include: ["timestamp", "location", "data_provider"]
         destination key: "value"
-        source output key: "metric_type"
+        source output key: "field_name"
         split keys:
-          kwh: "kwh"
-          duration_hours: "duration_hours"
+          kwh_value: "kwh"
       - type: "CachedSQLQuery"
-        cache keys: ["location", "data_provider", "metric_type"]
+        cache keys: ["location", "data_provider"]
         single value: True
-        query: "SELECT get_or_create_data_point_id(CONCAT('ev_sessions_', :metric_type), NULL, :location, :data_provider) AS dp_id;"
-    data sink: &ev-sessions-sink
+        query: "SELECT get_or_create_data_point_id('ev_sessions_kwh', NULL, :location, :data_provider) AS dp_id;"
+    data sink: &ev-sessions-kwh-sink
+      table: "forecasts"
+      columns:
+        dp_id: "dp_id"
+        obs_time: "timestamp"
+        fc_time: "timestamp"
+        value: "value"
+
+  ev-sessions-duration:
+    encoding: *ev-sessions-encoding
+    steps: &ev-sessions-duration-steps
+      - type: "UnpackArrayValues"
+        unpack keys: ["sessions"]
+      - type: "SplitByKey"
+        always include: ["timestamp", "location", "data_provider"]
+        destination key: "value"
+        source output key: "field_name"
+        split keys:
+          duration_value: "duration_hours"
+      - type: "CachedSQLQuery"
+        cache keys: ["location", "data_provider"]
+        single value: True
+        query: "SELECT get_or_create_data_point_id('ev_sessions_duration_hours', NULL, :location, :data_provider) AS dp_id;"
+    data sink: &ev-sessions-duration-sink
       table: "forecasts"
       columns:
         dp_id: "dp_id"
@@ -70,15 +92,25 @@ x-channels:
 ## The list of channel configurations. Each configuration specifies a single chain of processing steps
 channels:
   ## ---------------------------------------------------------------------------
-  ## EV charging session data
+  ## EV charging session data - kWh values
   ## ---------------------------------------------------------------------------
-  ev.charging.sessions:
+  ev.charging.sessions.kwh:
     trigger:
       stream id: "ev.charging.sessions"
       trim length: 500
     encoding: *ev-sessions-encoding
-    steps: *ev-sessions-steps
-    data sink: *ev-sessions-sink
+    steps: *ev-sessions-kwh-steps
+    data sink: *ev-sessions-kwh-sink
+  ## ---------------------------------------------------------------------------
+  ## EV charging session data - Duration values
+  ## ---------------------------------------------------------------------------
+  ev.charging.sessions.duration:
+    trigger:
+      stream id: "ev.charging.sessions"
+      trim length: 500
+    encoding: *ev-sessions-encoding
+    steps: *ev-sessions-duration-steps
+    data sink: *ev-sessions-duration-sink
   ## ---------------------------------------------------------------------------
   ## EV prediction data
   ## ---------------------------------------------------------------------------
