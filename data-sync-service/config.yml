@@ -7,7 +7,7 @@ x-channels:
   # ---------------------------------------------------------------------------
   ev-sessions:
     encoding: &ev-sessions-encoding
-      _default: "String"
+      _default: "KeepEncoding"
       timestamp: "DatetimeString"
       session_times: "JSONListWithDatetimeStrings"
       kwh_values: "JSON"
