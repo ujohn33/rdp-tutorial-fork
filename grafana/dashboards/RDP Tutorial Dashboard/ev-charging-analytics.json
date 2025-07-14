@@ -289,14 +289,14 @@
             "uid": "P40AE60E18F02DE32"
           },
           "editorMode": "code",
-          "format": "time_series",
+          "format": "table",
           "rawQuery": true,
           "rawSql": "SELECT\n  EXTRACT(hour FROM obs_time) as \"Hour\",\n  AVG(CASE WHEN dp.name = 'ev_sessions_kwh_values' THEN value END) as \"Average kWh per Session\",\n  AVG(CASE WHEN dp.name = 'ev_sessions_duration_values' THEN value END) as \"Average Duration (hours)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name LIKE 'ev_sessions_%'\nGROUP BY EXTRACT(hour FROM obs_time)\nORDER BY \"Hour\"",
           "refId": "A"
         }
       ],
       "title": "Hourly Patterns",
-      "type": "timeseries"
+      "type": "table"
     },
     {
       "datasource": {
@@ -342,7 +342,7 @@
             "uid": "P40AE60E18F02DE32"
           },
           "editorMode": "code",
-          "format": "time_series",
+          "format": "table",
           "rawQuery": true,
           "rawSql": "SELECT\n  value as \"Session Duration (hours)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_duration_values'\nORDER BY value",
           "refId": "A"
