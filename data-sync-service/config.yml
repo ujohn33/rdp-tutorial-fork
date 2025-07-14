@@ -7,14 +7,14 @@ x-channels:
   # ---------------------------------------------------------------------------
   ev-sessions:
     encoding: &ev-sessions-encoding
-      _default: "KeepEncoding"
-      timestamp: "KeepEncoding"
+      _default: "JSON"
+      timestamp: "JSONDatetimeString"
       sessions: "JSON"
     steps: &ev-sessions-steps
       - type: "CachedSQLQuery"
         cache keys: ["location", "data_provider"]
         single value: True
-        query: "SELECT get_or_create_data_point_id('ev_charging_sessions', NULL, :location, :data_provider) AS dp_id;"
+        query: "SELECT get_or_create_data_point_id('ev_charging_sessions', 'jsonb', :location, :data_provider) AS dp_id;"
     data sink: &ev-sessions-sink
       table: "raw_unitemporal_jsonb"
       columns:
