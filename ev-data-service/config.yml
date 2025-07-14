@@ -1,0 +1,22 @@
+version: 1
+
+ev_data:
+  # CSV file path for simulating data crawler
+  data_file: "/data/data_ev_parking_duration.csv"
+  output_stream: "ev.charging.sessions"
+  location: "Genk Henri Esserslaan 47"
+  # Simulation parameters
+  replay_speed: 24  # hours worth of data per minute
+  batch_size: 10    # sessions per batch
+
+redis:
+  host: "redis"
+  port: 6379
+  db: 0
+  password: ${REDIS_PASSWORD}
+
+logging:
+  loggers:
+    ev_data:
+      level: "INFO"
+      handlers: ["console"]

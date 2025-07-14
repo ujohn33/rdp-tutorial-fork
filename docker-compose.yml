@@ -15,12 +15,13 @@ services:
     #  - "6379:6379"
 
   ## -----------------------------------------------
-  ## This micro-service retrieves weather forecasts.
+  ## This micro-service simulates EV charging data.
   ## -----------------------------------------------
-  weather-data-service:
-    image: ait1/rdp-data-crawler:latest-dev
+  ev-data-service:
+    build: ev-data-service
     volumes:
-      - ./weather-data-service/config.yml:/etc/data_crawler/config.yml:ro
+      - ./ev-data-service/config.yml:/app/config.yml:ro
+      - ./data:/data:ro
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     depends_on:
@@ -100,17 +101,17 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
-  ## ------------------------------------------------------------------------------------
-  ## This micro-service uses the latest forecast data for running a PV module simulation.
-  ## ------------------------------------------------------------------------------------
-  pv-sim-service:
-    build: pv-sim-service
+  ## -------------------------------------------------------------------------
+  ## This micro-service predicts EV charging demand based on session data.
+  ## -------------------------------------------------------------------------
+  ev-prediction-service:
+    build: ev-prediction-service
     volumes:
-      - ./pv-sim-service/config.yml:/app/config.yml:ro
+      - ./ev-prediction-service/config.yml:/app/config.yml:ro
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     depends_on:
-      - weather-data-service
+      - ev-data-service
     restart: unless-stopped
 
   ## ---------------------------------------------------------------------------------

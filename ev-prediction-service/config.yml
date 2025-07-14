@@ -1,0 +1,21 @@
+version: 1
+
+ev_prediction:
+  input_stream: "ev.charging.sessions"
+  output_stream: "ev.predictions"
+  location: "Genk Henri Esserslaan 47"
+  # Model parameters
+  prediction_horizon_hours: 24
+  update_frequency_minutes: 15
+
+redis:
+  host: "redis"
+  port: 6379
+  db: 0
+  password: ${REDIS_PASSWORD}
+
+logging:
+  loggers:
+    ev_prediction:
+      level: "INFO"
+      handlers: ["console"]

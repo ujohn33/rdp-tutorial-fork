@@ -3,82 +3,93 @@ version: 1
 
 x-channels:
   # ---------------------------------------------------------------------------
-  # Template for weather forecasting data formats
+  # Template for EV charging session data formats
   # ---------------------------------------------------------------------------
-  weather-forecasts:
-    encoding: &weather-forecasts-encoding
+  ev-sessions:
+    encoding: &ev-sessions-encoding
       _default: "JSON"
-      forecast_time: "JSONDatetimeString"
-      observation_time: "JSONListWithDatetimeStrings"
-    steps: &weather-forecasts-steps
+      timestamp: "JSONDatetimeString"
+      sessions: "JSONArray"
+    steps: &ev-sessions-steps
       - type: "SplitByKey"
-        always include: ["forecast_time", "observation_time", "latitude", "longitude", "altitude", "station", "data_provider", "device_name"]
-        destination key: "value"
+        always include: ["timestamp", "location", "data_provider"]
+        destination key: "session_data"
         source output key: "observation_type"
       - type: "CachedSQLQuery"
-        cache keys: ["station", "data_provider", "observation_type"]
-        single value: True
-        query: "SELECT get_or_create_data_point_id(:observation_type, :device_name, :station, :data_provider) AS dp_id;"
-      - type: "UnpackArrayValues"
-        unpack keys: ["observation_time", "value"]
-    data sink: &weather-forecasts-sink
-      table: "forecasts"
-      update duplicate values: True
-      columns:
-        dp_id: "dp_id"
-        obs_time: "observation_time"
-        fc_time: "forecast_time"
-        value: "value"
-  ## ---------------------------------------------------------------------------
-  ## Template for forecasting data formats from PV sim
-  ## ---------------------------------------------------------------------------
-  pv-forecast:
-    encoding: &pv-forecast-encoding
-      _default: "JSON"
-      forecast_time: "JSONDatetimeString"
-      ts_forecast: "JSONListWithDatetimeStrings"
-    steps: &pv-forecast-steps
-      - type: "SplitByKey"
-        always include: ["ts_forecast", "data_provider", "forecast_time", "location"]
-        destination key: "value"
-        source output key: "observation_type"
-      - type: "CachedSQLQuery"
-        cache keys: ["observation_type", "data_provider", "location"]
+        cache keys: ["location", "data_provider", "observation_type"]
         single value: True
         query: "SELECT get_or_create_data_point_id(:observation_type, NULL, :location, :data_provider) AS dp_id;"
+      - type: "ProcessEVSessions"
+        session key: "session_data"
+    data sink: &ev-sessions-sink
+      table: "ev_sessions"
+      columns:
+        dp_id: "dp_id"
+        timestamp: "timestamp"
+        start_time: "start_time"
+        end_time: "end_time"
+        kwh: "kwh"
+        duration_minutes: "duration_minutes"
+        charging_point: "charging_point"
+        start_hour: "start_hour"
+        start_weekday: "start_weekday"
+        start_month: "start_month"
+
+  ## ---------------------------------------------------------------------------
+  ## Template for EV prediction data formats
+  ## ---------------------------------------------------------------------------
+  ev-predictions:
+    encoding: &ev-predictions-encoding
+      _default: "JSON"
+      timestamp: "JSONDatetimeString"
+      hourly_timestamps: "JSONArray"
+      hourly_energy_kwh: "JSONArray"
+      hourly_duration_min: "JSONArray"
+      daily_timestamps: "JSONArray"
+      daily_energy_kwh: "JSONArray"
+      daily_duration_min: "JSONArray"
+    steps: &ev-predictions-steps
+      - type: "SplitByKey"
+        always include: ["timestamp", "location", "data_provider"]
+        destination key: "value"
+        source output key: "prediction_type"
+      - type: "CachedSQLQuery"
+        cache keys: ["location", "data_provider", "prediction_type"]
+        single value: True
+        query: "SELECT get_or_create_data_point_id(:prediction_type, NULL, :location, :data_provider) AS dp_id;"
       - type: "UnpackArrayValues"
-        unpack keys: ["ts_forecast", "value"]
-    data sink: &pv-forecast-sink
+        unpack keys: ["hourly_timestamps", "value"]
+    data sink: &ev-predictions-sink
       table: "forecasts"
       update duplicate values: True
       columns:
         dp_id: "dp_id"
-        fc_time: "forecast_time"
-        obs_time: "ts_forecast"
+        obs_time: "hourly_timestamps"
+        fc_time: "timestamp"
         value: "value"
 
 ## The list of channel configurations. Each configuration specifies a single chain of processing steps
 channels:
   ## ---------------------------------------------------------------------------
-  ## Weather forecasting data
+  ## EV charging session data
   ## ---------------------------------------------------------------------------
-  geosphere.forecasts.nwp.WIEN-HOHE_WARTE:
+  ev.charging.sessions:
     trigger:
-      stream id: "geosphere.forecasts.nwp.WIEN-HOHE_WARTE"
+      stream id: "ev.charging.sessions"
       trim length: 500
-    encoding: *weather-forecasts-encoding
-    steps: *weather-forecasts-steps
-    data sink: *weather-forecasts-sink
+    encoding: *ev-sessions-encoding
+    steps: *ev-sessions-steps
+    data sink: *ev-sessions-sink
   ## ---------------------------------------------------------------------------
-  ## PV forecasting data
+  ## EV prediction data
   ## ---------------------------------------------------------------------------
-  pvsim.forecasts.WIEN-HOHE_WARTE:
+  ev.predictions:
     trigger:
-      stream id: "pvsim.forecasts.WIEN-HOHE_WARTE"
+      stream id: "ev.predictions"
       trim length: 100
-    encoding: *pv-forecast-encoding
-    steps: *pv-forecast-steps
-    data sink: *pv-forecast-sink
+    encoding: *ev-predictions-encoding
+    steps: *ev-predictions-steps
+    data sink: *ev-predictions-sink
 
 
 ## The connection to the destination database
