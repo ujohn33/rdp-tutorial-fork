@@ -265,7 +265,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 6,
         "x": 0,
         "y": 8
       },
@@ -293,7 +293,86 @@
           "rawQuery": true,
           "rawSql": "SELECT\n  obs_time as time,\n  value as \"kWh per Session\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_kwh_values'\nORDER BY obs_time",
           "refId": "A"
+        }
+      ],
+      "title": "Hourly Energy Patterns",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P40AE60E18F02DE32"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Hours",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
         },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 8
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
@@ -303,10 +382,10 @@
           "format": "time_series",
           "rawQuery": true,
           "rawSql": "SELECT\n  obs_time as time,\n  value as \"Duration (hours)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_duration_values'\nORDER BY obs_time",
-          "refId": "B"
+          "refId": "A"
         }
       ],
-      "title": "Hourly Patterns",
+      "title": "Hourly Duration Patterns",
       "type": "timeseries"
     },
     {
@@ -338,7 +417,7 @@
       },
       "id": 4,
       "options": {
-        "bucketSize": 30,
+        "bucketSize": 1,
         "legend": {
           "calcs": [],
           "displayMode": "list",
@@ -353,9 +432,9 @@
             "uid": "P40AE60E18F02DE32"
           },
           "editorMode": "code",
-          "format": "time_series",
+          "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  obs_time as time,\n  value as \"Session Duration (hours)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_duration_values'\nORDER BY obs_time",
+          "rawSql": "SELECT\n  value as \"Session Duration (hours)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_duration_values'\nORDER BY value",
           "refId": "A"
         }
       ],
