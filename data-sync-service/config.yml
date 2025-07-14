@@ -16,16 +16,12 @@ x-channels:
       - type: "UnpackArrayValues"
         unpack keys: ["sessions"]
       - type: "SplitByKey"
-        always include: ["timestamp", "location", "data_provider", "sessions"]
-        destination key: "session_data"
+        always include: ["timestamp", "location", "data_provider"]
+        destination key: "value"
         source output key: "metric_type"
         split keys:
-          kwh: "sessions"
-          duration_hours: "sessions"
-      - type: "ExtractField"
-        source key: "session_data"
-        destination key: "value"
-        field key: "metric_type"
+          kwh: "kwh"
+          duration_hours: "duration_hours"
       - type: "CachedSQLQuery"
         cache keys: ["location", "data_provider", "metric_type"]
         single value: True
