@@ -110,7 +110,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket('1 day', obs_time) AS time,\n  SUM(value) as \"Forecasted kWh per Day\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.observation_type = 'hourly_energy_kwh'\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  time_bucket('1 day', obs_time) AS time,\n  SUM(value) as \"Forecasted kWh per Day\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_kwh_values'\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -201,7 +201,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket('1 day', obs_time) AS time,\n  SUM(value) as \"Forecasted Duration per Day\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.observation_type = 'hourly_duration_min'\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  time_bucket('1 day', obs_time) AS time,\n  SUM(value) as \"Forecasted Duration per Day\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_duration_values'\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -291,7 +291,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  EXTRACT(hour FROM start_time) as \"Hour\",\n  AVG(kwh) as \"Average kWh per Session\",\n  AVG(duration_minutes) as \"Average Duration (min)\"\nFROM ev_sessions\nWHERE start_time >= NOW() - INTERVAL '7 days'\nGROUP BY EXTRACT(hour FROM start_time)\nORDER BY \"Hour\"",
+          "rawSql": "SELECT\n  EXTRACT(hour FROM obs_time) as \"Hour\",\n  AVG(CASE WHEN dp.name = 'ev_sessions_kwh_values' THEN value END) as \"Average kWh per Session\",\n  AVG(CASE WHEN dp.name = 'ev_sessions_duration_values' THEN value END) as \"Average Duration (hours)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE obs_time >= NOW() - INTERVAL '7 days'\nGROUP BY EXTRACT(hour FROM obs_time)\nORDER BY \"Hour\"",
           "refId": "A"
         }
       ],
@@ -344,7 +344,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  duration_minutes as \"Session Duration (minutes)\"\nFROM ev_sessions\nWHERE start_time >= NOW() - INTERVAL '30 days'\nORDER BY duration_minutes",
+          "rawSql": "SELECT\n  value as \"Session Duration (hours)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_duration_values'\n  AND obs_time >= NOW() - INTERVAL '30 days'\nORDER BY value",
           "refId": "A"
         }
       ],
