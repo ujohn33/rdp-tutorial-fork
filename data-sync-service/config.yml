@@ -23,8 +23,8 @@ x-channels:
       table: "forecasts"
       columns:
         dp_id: "dp_id"
-        obs_time: "timestamp"
-        fc_time: "timestamp"
+        obs_time: "start_time"
+        fc_time: "start_time"
         value: "kwh"
 
   ev-sessions-duration:
@@ -40,8 +40,8 @@ x-channels:
       table: "forecasts"
       columns:
         dp_id: "dp_id"
-        obs_time: "timestamp"
-        fc_time: "timestamp"
+        obs_time: "start_time"
+        fc_time: "start_time"
         value: "duration_hours"
 
   ## ---------------------------------------------------------------------------
