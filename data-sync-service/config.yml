@@ -16,7 +16,7 @@ x-channels:
       - type: "CachedSQLQuery"
         cache keys: ["location", "data_provider"]
         single value: True
-        query: "SELECT get_or_create_data_point_id('ev_sessions', NULL, :location, :data_provider) AS dp_id;"
+        query: "SELECT get_or_create_data_point_id('ev_sessions', 'jsonb', :location, :data_provider) AS dp_id;"
       - type: "UnpackArrayValues"
         unpack keys: ["sessions"]
     data sink: &ev-sessions-sink
