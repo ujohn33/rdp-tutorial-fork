@@ -7,9 +7,11 @@ x-channels:
   # ---------------------------------------------------------------------------
   ev-sessions:
     encoding: &ev-sessions-encoding
-      _default: "JSON"
+      _default: "String"
       timestamp: "DatetimeString"
       session_times: "JSONListWithDatetimeStrings"
+      kwh_values: "JSON"
+      duration_values: "JSON"
     steps: &ev-sessions-steps
       - type: "SplitByKey"
         always include: ["timestamp", "session_times", "location", "data_provider"]
