@@ -10,17 +10,15 @@ x-channels:
       _default: "JSON"
       timestamp: "JSONDatetimeString"
       sessions: "JSON"
+      start_time: "JSONDatetimeString"
+      end_time: "JSONDatetimeString"
     steps: &ev-sessions-steps
-      - type: "SplitByKey"
-        always include: ["timestamp", "location", "data_provider"]
-        destination key: "session_data"
-        source output key: "observation_type"
       - type: "CachedSQLQuery"
-        cache keys: ["location", "data_provider", "observation_type"]
+        cache keys: ["location", "data_provider"]
         single value: True
-        query: "SELECT get_or_create_data_point_id(:observation_type, NULL, :location, :data_provider) AS dp_id;"
-      - type: "ProcessEVSessions"
-        session key: "session_data"
+        query: "SELECT get_or_create_data_point_id('ev_sessions', NULL, :location, :data_provider) AS dp_id;"
+      - type: "UnpackArrayValues"
+        unpack keys: ["sessions"]
     data sink: &ev-sessions-sink
       table: "ev_sessions"
       columns:
@@ -29,11 +27,19 @@ x-channels:
         start_time: "start_time"
         end_time: "end_time"
         kwh: "kwh"
+        duration_seconds: "duration_seconds"
         duration_minutes: "duration_minutes"
+        duration_hours: "duration_hours"
         charging_point: "charging_point"
         start_hour: "start_hour"
         start_weekday: "start_weekday"
         start_month: "start_month"
+        start_month_sin: "start_month_sin"
+        start_month_cos: "start_month_cos"
+        start_hour_sin: "start_hour_sin"
+        start_hour_cos: "start_hour_cos"
+        start_weekday_sin: "start_weekday_sin"
+        start_weekday_cos: "start_weekday_cos"
 
   ## ---------------------------------------------------------------------------
   ## Template for EV prediction data formats
