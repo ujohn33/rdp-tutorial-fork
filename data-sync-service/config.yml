@@ -15,12 +15,6 @@ x-channels:
     steps: &ev-sessions-kwh-steps
       - type: "UnpackArrayValues"
         unpack keys: ["sessions"]
-      - type: "SplitByKey"
-        always include: ["timestamp", "location", "data_provider"]
-        destination key: "value"
-        source output key: "field_name"
-        split keys:
-          kwh_value: "kwh"
       - type: "CachedSQLQuery"
         cache keys: ["location", "data_provider"]
         single value: True
@@ -31,19 +25,13 @@ x-channels:
         dp_id: "dp_id"
         obs_time: "timestamp"
         fc_time: "timestamp"
-        value: "value"
+        value: "kwh"
 
   ev-sessions-duration:
     encoding: *ev-sessions-encoding
     steps: &ev-sessions-duration-steps
       - type: "UnpackArrayValues"
         unpack keys: ["sessions"]
-      - type: "SplitByKey"
-        always include: ["timestamp", "location", "data_provider"]
-        destination key: "value"
-        source output key: "field_name"
-        split keys:
-          duration_value: "duration_hours"
       - type: "CachedSQLQuery"
         cache keys: ["location", "data_provider"]
         single value: True
@@ -54,7 +42,7 @@ x-channels:
         dp_id: "dp_id"
         obs_time: "timestamp"
         fc_time: "timestamp"
-        value: "value"
+        value: "duration_hours"
 
   ## ---------------------------------------------------------------------------
   ## Template for EV prediction data formats
