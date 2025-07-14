@@ -6,8 +6,8 @@ ev_data:
   output_stream: "ev.charging.sessions"
   location: "Genk Henri Esserslaan 47"
   # Simulation parameters
-  replay_speed: 24  # hours worth of data per minute
-  batch_size: 10    # sessions per batch
+  replay_speed: 1   # hours worth of data per minute (slower)
+  batch_size: 1     # sessions per batch (smaller batches)
 
 redis:
   host: "redis"
