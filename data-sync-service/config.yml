@@ -25,7 +25,7 @@ x-channels:
         single value: True
         query: "SELECT get_or_create_data_point_id(CONCAT('ev_sessions_', :metric_type), NULL, :location, :data_provider) AS dp_id;"
       - type: "UnpackArrayValues"
-        unpack keys: ["sessions"]
+        unpack keys: ["value"]
     data sink: &ev-sessions-sink
       table: "forecasts"
       columns:
