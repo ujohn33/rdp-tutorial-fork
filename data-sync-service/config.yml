@@ -5,44 +5,22 @@ x-channels:
   # ---------------------------------------------------------------------------
   # Template for EV charging session data formats
   # ---------------------------------------------------------------------------
-  ev-sessions-kwh:
+  ev-sessions:
     encoding: &ev-sessions-encoding
       _default: "KeepEncoding"
       timestamp: "KeepEncoding"
       sessions: "JSON"
-      start_time: "DatetimeString"
-      end_time: "DatetimeString"
-    steps: &ev-sessions-kwh-steps
-      - type: "UnpackArrayValues"
-        unpack keys: ["sessions"]
+    steps: &ev-sessions-steps
       - type: "CachedSQLQuery"
         cache keys: ["location", "data_provider"]
         single value: True
-        query: "SELECT get_or_create_data_point_id('ev_sessions_kwh', NULL, :location, :data_provider) AS dp_id;"
-    data sink: &ev-sessions-kwh-sink
-      table: "forecasts"
+        query: "SELECT get_or_create_data_point_id('ev_charging_sessions', NULL, :location, :data_provider) AS dp_id;"
+    data sink: &ev-sessions-sink
+      table: "raw_unitemporal_jsonb"
       columns:
         dp_id: "dp_id"
-        obs_time: "timestamp"
-        fc_time: "timestamp"
-        value: "kwh"
-
-  ev-sessions-duration:
-    encoding: *ev-sessions-encoding
-    steps: &ev-sessions-duration-steps
-      - type: "UnpackArrayValues"
-        unpack keys: ["sessions"]
-      - type: "CachedSQLQuery"
-        cache keys: ["location", "data_provider"]
-        single value: True
-        query: "SELECT get_or_create_data_point_id('ev_sessions_duration_hours', NULL, :location, :data_provider) AS dp_id;"
-    data sink: &ev-sessions-duration-sink
-      table: "forecasts"
-      columns:
-        dp_id: "dp_id"
-        obs_time: "timestamp"
-        fc_time: "timestamp"
-        value: "duration_hours"
+        valid_time: "timestamp"
+        value: "sessions"
 
   ## ---------------------------------------------------------------------------
   ## Template for EV prediction data formats
@@ -80,25 +58,15 @@ x-channels:
 ## The list of channel configurations. Each configuration specifies a single chain of processing steps
 channels:
   ## ---------------------------------------------------------------------------
-  ## EV charging session data - kWh values
+  ## EV charging session data
   ## ---------------------------------------------------------------------------
-  ev.charging.sessions.kwh:
+  ev.charging.sessions:
     trigger:
       stream id: "ev.charging.sessions"
       trim length: 500
     encoding: *ev-sessions-encoding
-    steps: *ev-sessions-kwh-steps
-    data sink: *ev-sessions-kwh-sink
-  ## ---------------------------------------------------------------------------
-  ## EV charging session data - Duration values
-  ## ---------------------------------------------------------------------------
-  ev.charging.sessions.duration:
-    trigger:
-      stream id: "ev.charging.sessions"
-      trim length: 500
-    encoding: *ev-sessions-encoding
-    steps: *ev-sessions-duration-steps
-    data sink: *ev-sessions-duration-sink
+    steps: *ev-sessions-steps
+    data sink: *ev-sessions-sink
   ## ---------------------------------------------------------------------------
   ## EV prediction data
   ## ---------------------------------------------------------------------------
