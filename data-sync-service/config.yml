@@ -23,7 +23,7 @@ x-channels:
       table: "raw_unitemporal_jsonb"
       columns:
         dp_id: "dp_id"
-        obs_time: "timestamp"
+        valid_time: "timestamp"
         value: "sessions"
 
   ## ---------------------------------------------------------------------------
