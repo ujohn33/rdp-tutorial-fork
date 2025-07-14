@@ -7,20 +7,31 @@ x-channels:
   # ---------------------------------------------------------------------------
   ev-sessions:
     encoding: &ev-sessions-encoding
-      _default: "KeepEncoding"
-      timestamp: "DatetimeString"
-      sessions: "JSON"
+      _default: "JSON"
+      timestamp: "JSONDatetimeString"
+      session_times: "JSONListWithDatetimeStrings"
     steps: &ev-sessions-steps
+      - type: "SplitByKey"
+        always include: ["timestamp", "session_times", "location", "data_provider"]
+        destination key: "value"
+        source output key: "metric_type"
+        split keys:
+          kwh: "kwh_values"
+          duration_hours: "duration_values"
       - type: "CachedSQLQuery"
-        cache keys: ["location", "data_provider"]
+        cache keys: ["location", "data_provider", "metric_type"]
         single value: True
-        query: "SELECT get_or_create_data_point_id('ev_charging_sessions', 'jsonb', :location, :data_provider) AS dp_id;"
+        query: "SELECT get_or_create_data_point_id(CONCAT('ev_sessions_', :metric_type), NULL, :location, :data_provider) AS dp_id;"
+      - type: "UnpackArrayValues"
+        unpack keys: ["session_times", "value"]
     data sink: &ev-sessions-sink
-      table: "raw_unitemporal_jsonb"
+      table: "forecasts"
+      update duplicate values: True
       columns:
         dp_id: "dp_id"
-        valid_time: "timestamp"
-        value: "sessions"
+        obs_time: "session_times"
+        fc_time: "timestamp"
+        value: "value"
 
   ## ---------------------------------------------------------------------------
   ## Template for EV prediction data formats

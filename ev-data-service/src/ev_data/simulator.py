@@ -60,34 +60,25 @@ class EVDataSimulator:
         end_index = min(self.current_index + self.batch_size, len(self.df))
         batch = self.df.iloc[self.current_index:end_index]
         
-        # Convert to streaming format
+        # Extract data for each session
+        session_times = []
+        kwh_values = []
+        duration_values = []
+        
+        for _, row in batch.iterrows():
+            session_times.append(row['Start time'].isoformat())
+            kwh_values.append(float(row['kwh']))
+            duration_values.append(float(row['Duration_hours']))
+        
+        # Convert to streaming format compatible with RedSQL
         session_data = {
             'timestamp': datetime.now().isoformat(),
             'location': self.location,
             'data_provider': 'EV_Data_Simulator',
-            'sessions': []
+            'session_times': session_times,
+            'kwh_values': kwh_values,
+            'duration_values': duration_values
         }
-        
-        for _, row in batch.iterrows():
-            session = {
-                'start_time': row['Start time'].isoformat(),
-                'end_time': row['End time'].isoformat(),
-                'kwh': float(row['kwh']),
-                'duration_seconds': float(row['duration_seconds']),
-                'duration_minutes': float(row['duration_minutes']),
-                'duration_hours': float(row['Duration_hours']),
-                'charging_point': str(row['Charging point']),
-                'start_month': int(row['Start_time_Month']),
-                'start_hour': int(row['Start_time_Hour']),
-                'start_weekday': int(row['Start_time_Weekday']),
-                'start_month_sin': float(row['Start_time_Month_x']),
-                'start_month_cos': float(row['Start_time_Month_y']),
-                'start_hour_sin': float(row['Start_time_Hour_x']),
-                'start_hour_cos': float(row['Start_time_Hour_y']),
-                'start_weekday_sin': float(row['Start_time_Weekday_x']),
-                'start_weekday_cos': float(row['Start_time_Weekday_y'])
-            }
-            session_data['sessions'].append(session)
             
         self.current_index = end_index
         Logger.info(f"Generated batch of {len(batch)} EV charging sessions")
