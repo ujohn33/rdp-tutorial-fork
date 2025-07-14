@@ -5,6 +5,8 @@ import redis
 import os
 import time
 import yaml
+import numpy as np
+import pandas as pd
 from .models import EVPredictionModel
 
 Logger = logging.getLogger('ev_prediction')
@@ -65,9 +67,45 @@ def main():
                 )
 
             if session_data:
-                # Parse session data
+                # Parse session data - new format with arrays
                 data = session_data[0][1][-1][1]
-                sessions = json.loads(data['sessions'])
+                
+                # Extract arrays from the new format
+                session_times = json.loads(data['session_times'])
+                kwh_values = json.loads(data['kwh_values'])
+                duration_values = json.loads(data['duration_values'])
+
+                # Reconstruct session objects for the model
+                sessions = []
+                for i in range(len(session_times)):
+                    # Parse the timestamp to extract temporal features
+                    start_time = pd.to_datetime(session_times[i])
+                    
+                    # Create session object with required features
+                    session = {
+                        'start_time': session_times[i],
+                        'kwh': kwh_values[i],
+                        'duration_minutes': duration_values[i] * 60,  # hrs
+                        'start_hour_sin': np.sin(
+                            2 * np.pi * start_time.hour / 24
+                        ),
+                        'start_hour_cos': np.cos(
+                            2 * np.pi * start_time.hour / 24
+                        ),
+                        'start_weekday_sin': np.sin(
+                            2 * np.pi * start_time.weekday() / 7
+                        ),
+                        'start_weekday_cos': np.cos(
+                            2 * np.pi * start_time.weekday() / 7
+                        ),
+                        'start_month_sin': np.sin(
+                            2 * np.pi * start_time.month / 12
+                        ),
+                        'start_month_cos': np.cos(
+                            2 * np.pi * start_time.month / 12
+                        )
+                    }
+                    sessions.append(session)
 
                 Logger.info(f"Received {len(sessions)} new sessions")
 
@@ -97,9 +135,15 @@ def main():
                             'hourly_timestamps': json.dumps(timestamps),
                             'hourly_energy_kwh': json.dumps(energy_pred),
                             'hourly_duration_min': json.dumps(duration_pred),
-                            'daily_timestamps': json.dumps(daily_pred['timestamps']),
-                            'daily_energy_kwh': json.dumps(daily_pred['energy_kwh']),
-                            'daily_duration_min': json.dumps(daily_pred['duration_minutes'])
+                            'daily_timestamps': json.dumps(
+                                daily_pred['timestamps']
+                            ),
+                            'daily_energy_kwh': json.dumps(
+                                daily_pred['energy_kwh']
+                            ),
+                            'daily_duration_min': json.dumps(
+                                daily_pred['duration_minutes']
+                            )
                         }
                         r.xadd(ev_config['output_stream'], pred_data)
                         Logger.info("Sent predictions to Redis stream")
