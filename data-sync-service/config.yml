@@ -10,8 +10,8 @@ x-channels:
       _default: "KeepEncoding"
       timestamp: "KeepEncoding"
       sessions: "JSON"
-      start_time: "JSONDatetimeString"
-      end_time: "JSONDatetimeString"
+      start_time: "ISO8601DatetimeString"
+      end_time: "ISO8601DatetimeString"
     steps: &ev-sessions-kwh-steps
       - type: "UnpackArrayValues"
         unpack keys: ["sessions"]
