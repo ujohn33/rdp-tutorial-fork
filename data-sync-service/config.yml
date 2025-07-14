@@ -13,26 +13,26 @@ x-channels:
       start_time: "JSONDatetimeString"
       end_time: "JSONDatetimeString"
     steps: &ev-sessions-steps
+      - type: "UnpackArrayValues"
+        unpack keys: ["sessions"]
       - type: "SplitByKey"
         always include: ["timestamp", "location", "data_provider"]
         destination key: "value"
         source output key: "metric_type"
         split keys:
-          kwh: "sessions"
-          duration_hours: "sessions"
+          kwh: "kwh"
+          duration_hours: "duration_hours"
       - type: "CachedSQLQuery"
         cache keys: ["location", "data_provider", "metric_type"]
         single value: True
         query: "SELECT get_or_create_data_point_id(CONCAT('ev_sessions_', :metric_type), NULL, :location, :data_provider) AS dp_id;"
-      - type: "UnpackArrayValues"
-        unpack keys: ["value"]
     data sink: &ev-sessions-sink
       table: "forecasts"
       columns:
         dp_id: "dp_id"
         obs_time: "timestamp"
         fc_time: "timestamp"
-        value: "${metric_type}"
+        value: "value"
 
   ## ---------------------------------------------------------------------------
   ## Template for EV prediction data formats
