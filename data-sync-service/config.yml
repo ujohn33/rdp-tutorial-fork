@@ -8,7 +8,7 @@ x-channels:
   ev-sessions:
     encoding: &ev-sessions-encoding
       _default: "JSON"
-      timestamp: "JSONDatetimeString"
+      timestamp: "DatetimeString"
       session_times: "JSONListWithDatetimeStrings"
     steps: &ev-sessions-steps
       - type: "SplitByKey"
