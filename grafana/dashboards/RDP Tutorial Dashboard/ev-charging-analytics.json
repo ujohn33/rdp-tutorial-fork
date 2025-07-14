@@ -291,7 +291,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  EXTRACT(hour FROM obs_time) as \"Hour\",\n  AVG(CASE WHEN dp.name = 'ev_sessions_kwh_values' THEN value END) as \"Average kWh per Session\",\n  AVG(CASE WHEN dp.name = 'ev_sessions_duration_values' THEN value END) as \"Average Duration (hours)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name LIKE 'ev_sessions_%'\nGROUP BY EXTRACT(hour FROM obs_time)\nORDER BY \"Hour\"",
+          "rawSql": "SELECT\n  EXTRACT(hour FROM obs_time) as \"Hour\",\n  value as \"kWh per Session\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_kwh_values'\nUNION ALL\nSELECT\n  EXTRACT(hour FROM obs_time) as \"Hour\",\n  value as \"Duration (hours)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_duration_values'\nORDER BY \"Hour\"",
           "refId": "A"
         }
       ],
