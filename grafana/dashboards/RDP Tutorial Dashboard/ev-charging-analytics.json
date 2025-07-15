@@ -520,6 +520,118 @@
       ],
       "title": "Session Duration Distribution",
       "type": "histogram"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P40AE60E18F02DE32"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Energy (kWh)",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "max": 25,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "kwatth"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Energy (kWh)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "id": 6,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "colorByField": "Energy (kWh)",
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 100
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "P40AE60E18F02DE32"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH session_data AS (\n    SELECT \n        dp_kwh.created_at,\n        dp_kwh.value as kwh_value,\n        dp_duration.value as duration_hours,\n        ROW_NUMBER() OVER (ORDER BY dp_kwh.created_at) as session_id\n    FROM forecasts f_kwh\n    JOIN data_points dp_kwh ON f_kwh.dp_id = dp_kwh.id\n    JOIN forecasts f_duration ON f_duration.created_at = f_kwh.created_at\n    JOIN data_points dp_duration ON f_duration.dp_id = dp_duration.id\n    WHERE dp_kwh.name = 'ev_sessions_kwh_values'\n    AND dp_duration.name = 'ev_sessions_duration_values'\n    AND dp_kwh.created_at >= '2023-07-01 00:00:00'\n    AND dp_kwh.created_at <= '2023-07-31 23:59:59'\n    ORDER BY dp_kwh.created_at\n)\nSELECT \n    created_at as time,\n    kwh_value as \"Energy (kWh)\"\nFROM session_data\nORDER BY created_at",
+          "refId": "A"
+        }
+      ],
+      "title": "Charging Sessions Timeline",
+      "type": "barchart"
     }
   ],
   "refresh": "5m",
