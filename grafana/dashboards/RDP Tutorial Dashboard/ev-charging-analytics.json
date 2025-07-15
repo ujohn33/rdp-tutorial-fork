@@ -147,113 +147,6 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "Occupancy %",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Charger Occupancy %"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "blue"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 12,
-        "y": 0
-      },
-      "id": 2,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P40AE60E18F02DE32"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket('1 day', obs_time) AS time,\n  (SUM(value) / 24.0) * 100 as \"Charger Occupancy %\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_duration_values'\nGROUP BY time\nORDER BY time",
-          "refId": "A"
-        }
-      ],
-      "title": "Daily Charger Occupancy",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P40AE60E18F02DE32"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -626,7 +519,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH session_data AS (\n    SELECT \n        dp_kwh.created_at,\n        dp_kwh.value as kwh_value,\n        dp_duration.value as duration_hours,\n        ROW_NUMBER() OVER (ORDER BY dp_kwh.created_at) as session_id\n    FROM forecasts f_kwh\n    JOIN data_points dp_kwh ON f_kwh.dp_id = dp_kwh.id\n    JOIN forecasts f_duration ON f_duration.created_at = f_kwh.created_at\n    JOIN data_points dp_duration ON f_duration.dp_id = dp_duration.id\n    WHERE dp_kwh.name = 'ev_sessions_kwh_values'\n    AND dp_duration.name = 'ev_sessions_duration_values'\n    AND dp_kwh.created_at >= '2023-07-01 00:00:00'\n    AND dp_kwh.created_at <= '2023-07-31 23:59:59'\n    ORDER BY dp_kwh.created_at\n)\nSELECT \n    created_at as time,\n    kwh_value as \"Energy (kWh)\"\nFROM session_data\nORDER BY created_at",
+          "rawSql": "WITH session_data AS (\n    SELECT \n        dp_kwh.created_at,\n        dp_kwh.value as kwh_value,\n        dp_duration.value as duration_hours,\n        ROW_NUMBER() OVER (ORDER BY dp_kwh.created_at) as session_id\n    FROM forecasts f_kwh\n    JOIN data_points dp_kwh ON f_kwh.dp_id = dp_kwh.id\n    JOIN forecasts f_duration ON f_duration.dp_id = dp_duration.id\n    JOIN data_points dp_duration ON f_duration.dp_id = dp_duration.id\n    WHERE dp_kwh.name = 'ev_sessions_kwh_values'\n    AND dp_duration.name = 'ev_sessions_duration_values'\n    AND f_kwh.created_at = f_duration.created_at\n    AND dp_kwh.created_at >= '2023-07-01 00:00:00'\n    AND dp_kwh.created_at <= '2023-07-31 23:59:59'\n    ORDER BY dp_kwh.created_at\n)\nSELECT \n    created_at as time,\n    kwh_value as \"Energy (kWh)\"\nFROM session_data\nORDER BY created_at",
           "refId": "A"
         }
       ],
@@ -651,13 +544,13 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 4,
-        "x": 20,
+        "w": 12,
+        "x": 12,
         "y": 0
       },
       "id": 7,
       "options": {
-        "content": "<div style=\"text-align: center; padding: 20px;\">\n  <img src=\"https://www.reformers.info/wp-content/uploads/2023/03/Reformers-Logo-1.png\" alt=\"Reformers Logo\" style=\"max-width: 100%; height: auto; max-height: 120px;\" />\n  <p style=\"margin-top: 10px; font-size: 12px; color: #666;\">Powered by Reformers</p>\n</div>",
+        "content": "<div style=\"text-align: center; padding: 30px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 8px; height: 100%; display: flex; flex-direction: column; justify-content: center;\">\n  <img src=\"https://www.reformers.info/wp-content/uploads/2023/03/Reformers-Logo-1.png\" alt=\"Reformers Logo\" style=\"max-width: 90%; height: auto; max-height: 160px; margin-bottom: 15px;\" />\n  <p style=\"margin: 0; font-size: 16px; font-weight: bold; color: #2c3e50;\">Powered by Reformers</p>\n  <p style=\"margin: 5px 0 0 0; font-size: 12px; color: #7f8c8d;\">Renewable Energy Valleys</p>\n</div>",
         "mode": "html"
       },
       "pluginVersion": "10.0.0",
