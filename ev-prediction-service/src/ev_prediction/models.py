@@ -112,20 +112,24 @@ class EVPredictionModel:
             'runtime': energy_runtime + duration_runtime
         }
 
-    def predict_hourly_demand(self, prediction_hours: int = 24) -> Tuple[List[str], List[float], List[float]]:
+    def predict_hourly_demand(
+        self,
+        prediction_hours: int = 24,
+        base_time: datetime = None
+    ) -> Tuple[List[str], List[float], List[float]]:
         """Predict hourly energy and duration demand."""
         if not self.is_trained:
             Logger.warning("Model not trained yet")
             return [], [], []
 
-        # Generate hourly timestamps for next N hours
-        now = datetime.now()
+        # Use provided base_time or current time as fallback
+        start_time = base_time if base_time else datetime.now()
         timestamps = []
         hourly_energy = []
         hourly_duration = []
 
         for h in range(prediction_hours):
-            ts = now + timedelta(hours=h)
+            ts = start_time + timedelta(hours=h)
             timestamps.append(ts.isoformat())
 
             # Create cyclical features for this hour
@@ -148,14 +152,20 @@ class EVPredictionModel:
             # Estimate sessions per hour (configurable parameter)
             sessions_per_hour = 2.5
             hourly_energy.append(prediction['kwh'] * sessions_per_hour)
-            hourly_duration.append(prediction['duration_minutes'] * sessions_per_hour)
+            hourly_duration.append(
+                prediction['duration_minutes'] * sessions_per_hour
+            )
 
         return timestamps, hourly_energy, hourly_duration
 
-    def predict_daily_totals(self, days: int = 7) -> Dict[str, List]:
+    def predict_daily_totals(
+        self,
+        days: int = 7,
+        base_time: datetime = None
+    ) -> Dict[str, List]:
         """Predict daily totals for the next N days."""
         timestamps, hourly_energy, hourly_duration = \
-            self.predict_hourly_demand(24 * days)
+            self.predict_hourly_demand(24 * days, base_time)
 
         # Group by day
         daily_energy = []
@@ -206,8 +216,10 @@ class EVPredictionModel:
         
         # Calculate metrics
         energy_mae = mean_absolute_error(test_data['kwh'], energy_predictions)
-        duration_mae = mean_absolute_error(test_data['duration_minutes'], 
-                                         duration_predictions)
+        duration_mae = mean_absolute_error(
+            test_data['duration_minutes'],
+            duration_predictions
+        )
         
         return {
             'energy_mae': energy_mae,

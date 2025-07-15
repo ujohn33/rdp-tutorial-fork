@@ -498,7 +498,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 32
+        "y": 24
       },
       "id": 6,
       "options": {
@@ -532,7 +532,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  obs_time as time,\n  value as \"Energy (kWh)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_kwh_values'\nAND obs_time >= '2023-07-01 00:00:00'\nAND obs_time <= '2023-07-31 23:59:59'\nORDER BY obs_time",
+          "rawSql": "SELECT\n  obs_time as time,\n  value as \"Energy (kWh)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_kwh_values'\nORDER BY obs_time",
           "refId": "A"
         }
       ],
@@ -569,6 +569,128 @@
       "pluginVersion": "10.0.0",
       "title": "",
       "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P40AE60E18F02DE32"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Energy (kWh)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "kwatth"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Actual Energy (kWh)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Predicted Energy (kWh)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "P40AE60E18F02DE32"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "-- Actual charging sessions\nSELECT \n  obs_time as time,\n  value as \"Actual Energy (kWh)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_kwh_values'\n\nUNION ALL\n\n-- Predictions from EV prediction service\nSELECT \n  p.created_at as time,\n  p.predicted_energy::numeric as \"Predicted Energy (kWh)\"\nFROM predictions p\nWHERE p.predicted_energy IS NOT NULL\n\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Prediction vs Actual Energy Comparison",
+      "type": "timeseries"
     }
   ],
   "refresh": "5m",
@@ -578,8 +700,8 @@
     "list": []
   },
   "time": {
-    "from": "2023-07-01T00:00:00.000Z",
-    "to": "2023-07-31T23:59:59.999Z"
+    "from": "2023-01-01T00:00:00.000Z",
+    "to": "2024-12-31T23:59:59.000Z"
   },
   "timepicker": {},
   "timezone": "",

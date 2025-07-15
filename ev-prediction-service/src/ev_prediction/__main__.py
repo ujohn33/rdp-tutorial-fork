@@ -119,12 +119,19 @@ def main():
                     if metrics:
                         Logger.info(f"Model metrics: {metrics}")
 
-                    # Hourly predictions
+                    # Use the latest session timestamp as base for predictions
+                    latest_session_time = max(
+                        pd.to_datetime(ts) for ts in session_times
+                    )
+                    
+                    # Hourly predictions starting from latest session time
                     timestamps, energy_pred, duration_pred = \
-                        model.predict_hourly_demand(24)
+                        model.predict_hourly_demand(24, latest_session_time)
 
                     # Daily predictions
-                    daily_pred = model.predict_daily_totals(7)
+                    daily_pred = model.predict_daily_totals(
+                        7, latest_session_time
+                    )
 
                     # Send predictions to Redis
                     with redis.StrictRedis(connection_pool=redis_pool) as r:
