@@ -56,7 +56,7 @@ class EVPredictionModel:
             self.sessions_df = self.sessions_df.tail(10000).reset_index(drop=True)
         
         # Mark as trained if we have enough data
-        if len(self.sessions_df) >= 50:
+        if len(self.sessions_df) >= 10:
             self.is_trained = True
             Logger.info(f"Model ready with {len(self.sessions_df)} sessions")
 

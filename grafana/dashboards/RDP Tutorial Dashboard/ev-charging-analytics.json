@@ -685,7 +685,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "-- Actual charging sessions\nSELECT \n  obs_time as time,\n  value as \"Actual Energy (kWh)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_kwh_values'\n\nUNION ALL\n\n-- Predictions from EV prediction service\nSELECT \n  p.created_at as time,\n  p.predicted_energy::numeric as \"Predicted Energy (kWh)\"\nFROM predictions p\nWHERE p.predicted_energy IS NOT NULL\n\nORDER BY time",
+          "rawSql": "-- Actual charging sessions\nSELECT \n  obs_time as time,\n  value as \"Actual Energy (kWh)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_kwh_values'\n\nUNION ALL\n\n-- Predictions from EV prediction service\nSELECT \n  obs_time as time,\n  value as \"Predicted Energy (kWh)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name LIKE 'hourly_energy_kwh%'\n\nORDER BY time",
           "refId": "A"
         }
       ],

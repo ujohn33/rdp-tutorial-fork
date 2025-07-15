@@ -7,7 +7,7 @@ ev_data:
   location: "Genk Henri Esserslaan 47"
   # Simulation parameters
   replay_speed: 12   # hours worth of data per minute (slower)
-  batch_size: 1     # sessions per batch (smaller batches)
+  batch_size: 20     # sessions per batch (larger batches for faster training)
 
 redis:
   host: "redis"
