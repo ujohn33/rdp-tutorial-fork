@@ -550,7 +550,7 @@
       },
       "id": 7,
       "options": {
-        "content": "<div style=\"text-align: center; padding: 20px;\">\n  <img src=\"https://www.reformers.info/wp-content/uploads/2023/03/Reformers-Logo-1.png\" alt=\"Reformers Logo\" style=\"max-width: 100%; height: auto; max-height: 120px;\" />\n  <p style=\"margin-top: 10px; font-size: 12px; color: #666;\">Powered by Reformers</p>\n</div>",
+        "content": "<div style=\"text-align: center; padding: 20px;\">\n  <img src=\"https://www.enlit.world/wp-content/uploads/2024/04/reformers-logo-horizontal-color.png\" alt=\"Reformers Logo\" style=\"max-width: 100%; height: auto; max-height: 120px;\" />\n  <p style=\"margin-top: 10px; font-size: 12px; color: #666;\">Powered by Reformers</p>\n</div>",
         "mode": "html"
       },
       "pluginVersion": "10.0.0",
