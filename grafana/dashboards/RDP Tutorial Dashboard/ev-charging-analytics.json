@@ -443,7 +443,8 @@
             },
             "thresholdsStyle": {
               "mode": "off"
-            }
+            },
+            "axisGridShow": true
           },
           "mappings": [],
           "max": 25,
@@ -520,10 +521,7 @@
           "sort": "none"
         },
         "xTickLabelRotation": 45,
-        "xTickLabelSpacing": 0,
-        "xField": {
-          "mode": "time"
-        }
+        "xTickLabelSpacing": 0
       },
       "targets": [
         {
