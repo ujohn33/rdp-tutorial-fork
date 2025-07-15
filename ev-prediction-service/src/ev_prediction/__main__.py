@@ -108,9 +108,24 @@ def main():
                     sessions.append(session)
 
                 Logger.info(f"Received {len(sessions)} new sessions")
+                
+                # Debug: Log session structure
+                if sessions:
+                    keys = list(sessions[0].keys())
+                    Logger.info(f"Sample session keys: {keys}")
 
                 # Add sessions to the model's historical database
                 model.add_sessions(sessions)
+                
+                # Debug: Log model state
+                total_sessions = (
+                    len(model.sessions_df)
+                    if not model.sessions_df.empty else 0
+                )
+                Logger.info(
+                    f"Model trained: {model.is_trained}, "
+                    f"Total sessions: {total_sessions}"
+                )
 
                 # Generate predictions if model is trained
                 if model.is_trained:
