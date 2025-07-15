@@ -520,7 +520,10 @@
           "sort": "none"
         },
         "xTickLabelRotation": 45,
-        "xTickLabelSpacing": 0
+        "xTickLabelSpacing": 0,
+        "xField": {
+          "mode": "time"
+        }
       },
       "targets": [
         {
@@ -531,7 +534,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  obs_time as time,\n  TO_CHAR(obs_time, 'YYYY-MM-DD HH24:MI:SS') as \"Session Time\",\n  value as \"Energy (kWh)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_kwh_values'\nAND obs_time >= '2023-07-01 00:00:00'\nAND obs_time <= '2023-07-31 23:59:59'\nORDER BY obs_time",
+          "rawSql": "SELECT\n  obs_time as time,\n  value as \"Energy (kWh)\"\nFROM forecasts f\nJOIN data_points dp ON f.dp_id = dp.id\nWHERE dp.name = 'ev_sessions_kwh_values'\nAND obs_time >= '2023-07-01 00:00:00'\nAND obs_time <= '2023-07-31 23:59:59'\nORDER BY obs_time",
           "refId": "A"
         }
       ],
