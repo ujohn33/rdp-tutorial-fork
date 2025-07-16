@@ -143,24 +143,21 @@ def main():
                     if metrics:
                         Logger.info(f"Model metrics: {metrics}")
 
-                    # Generate predictions for future arrivals
-                    # Simulate new arrivals by predicting for sessions
+                    # Generate predictions for the actual sessions received
                     predictions = []
-                    current_time = pd.to_datetime(session_times[-1])
                     
-                    # Generate predictions for next sessions (arrivals)
-                    for i in range(5):  # Predict for next 5 potential arrivals
-                        # Simulate arrival times (every 30-120 minutes)
-                        minutes = np.random.randint(30, 120)
-                        arrival_offset = pd.Timedelta(minutes=minutes)
-                        arrival_time = current_time + arrival_offset * (i + 1)
-                        user_id = float(np.random.randint(1000, 9999))
+                    # Generate predictions for each session using timestamps
+                    for i, session_time in enumerate(session_times):
+                        user_id = user_ids[i] if i < len(user_ids) else 0.0
                         
-                        # Predict for this simulated arrival
+                        # Generate prediction for this actual session
                         prediction = model.predict_session_on_arrival(
-                            arrival_time.isoformat(),
+                            session_time,  # Use the actual session timestamp
                             user_id
                         )
+                        
+                        # Set the prediction timestamp to match the session
+                        prediction['timestamp'] = session_time
                         predictions.append(prediction)
                     
                     # Send predictions to Redis stream
@@ -170,7 +167,8 @@ def main():
                         ) as r:
                             for pred in predictions:
                                 pred_data = {
-                                    'timestamp': data['timestamp'],
+                                    # Use session timestamp for prediction
+                                    'timestamp': pred['timestamp'],
                                     'location': data['location'],
                                     'data_provider': 'EV_Prediction_Model',
                                     'arrival_time': pred['arrival_time'],
