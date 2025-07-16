@@ -1,6 +1,5 @@
 import logging
 import pandas as pd
-import numpy as np
 from datetime import datetime
 from typing import Dict, Any
 
@@ -22,6 +21,9 @@ class EVDataSimulator:
         # Load and prepare data
         self.df = self._load_and_prepare_data()
         self.current_index = 0
+        
+        # Create user ID mapping from Whitelist column
+        self.user_id_mapping = self._create_user_id_mapping()
         
     def _load_and_prepare_data(self) -> pd.DataFrame:
         """Load CSV data and prepare for streaming."""
@@ -48,10 +50,23 @@ class EVDataSimulator:
             'Start_time_Hour', 'Start_time_Weekday', 'Start_time_Month_x',
             'Start_time_Month_y', 'Start_time_Hour_x', 'Start_time_Hour_y',
             'Start_time_Weekday_x', 'Start_time_Weekday_y',
-            'Location', 'Charging point'
+            'Location', 'Charging point', 'Whitelist'
         ]
         
         return df[columns].copy()
+        
+    def _create_user_id_mapping(self) -> Dict[str, int]:
+        """Create mapping from Whitelist values to unique integer user IDs."""
+        unique_whitelist_values = self.df['Whitelist'].dropna().unique()
+        
+        # Create mapping starting from user ID 1000
+        user_id_mapping = {}
+        for i, whitelist_value in enumerate(unique_whitelist_values):
+            user_id_mapping[whitelist_value] = 1000 + i
+            
+        Logger.info(f"Created user ID mapping for {len(user_id_mapping)} "
+                    f"unique users")
+        return user_id_mapping
         
     def get_next_batch(self) -> Dict[str, Any]:
         """Get next batch of EV charging sessions."""
@@ -71,9 +86,17 @@ class EVDataSimulator:
             session_times.append(row['Start time'].isoformat())
             kwh_values.append(float(row['kwh']))
             duration_values.append(float(row['Duration_hours']))
-            # Generate realistic numeric user IDs
-            user_id_num = np.random.randint(1000, 9999)
-            user_ids.append(float(user_id_num))  # Store as float for database
+            
+            # Get user ID from Whitelist column
+            whitelist_value = row['Whitelist']
+            if (pd.notna(whitelist_value) and
+                    whitelist_value in self.user_id_mapping):
+                user_id = self.user_id_mapping[whitelist_value]
+            else:
+                # Fallback to a default user ID if whitelist is missing
+                user_id = 1000  # Default user ID
+            
+            user_ids.append(float(user_id))  # Store as float for database
         
         # Convert to streaming format compatible with RedSQL
         session_data = {
