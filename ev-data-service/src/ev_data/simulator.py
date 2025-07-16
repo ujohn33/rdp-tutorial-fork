@@ -71,8 +71,9 @@ class EVDataSimulator:
             session_times.append(row['Start time'].isoformat())
             kwh_values.append(float(row['kwh']))
             duration_values.append(float(row['Duration_hours']))
-            # Generate realistic user IDs
-            user_ids.append(f"user_{np.random.randint(1000, 9999)}")
+            # Generate realistic numeric user IDs
+            user_id_num = np.random.randint(1000, 9999)
+            user_ids.append(float(user_id_num))  # Store as float for database
         
         # Convert to streaming format compatible with RedSQL
         session_data = {

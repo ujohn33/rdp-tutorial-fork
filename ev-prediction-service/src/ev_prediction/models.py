@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 import pandas as pd
+import time
 from datetime import datetime, timedelta
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics import mean_absolute_error
@@ -22,6 +23,7 @@ class EVPredictionModel:
             'start_month_sin', 'start_month_cos'
         ]
         self.target_columns = ['kwh', 'duration_minutes']
+        self.categorical_features = ['user_id']  # Define categorical features
 
     def add_sessions(self, sessions: List[Dict]) -> None:
         """Add new sessions to the historical database."""
@@ -34,10 +36,12 @@ class EVPredictionModel:
         df['timestamp'] = pd.to_datetime(df['start_time'])
         
         # Keep only required columns
-        required_cols = self.feature_columns + self.target_columns + ['timestamp']
+        required_cols = (self.feature_columns + self.target_columns + 
+                        self.categorical_features + ['timestamp'])
         available_cols = [col for col in required_cols if col in df.columns]
         
-        if len(available_cols) < len(self.feature_columns) + len(self.target_columns):
+        if len(available_cols) < (len(self.feature_columns) + 
+                                 len(self.target_columns)):
             Logger.warning("Missing required columns in session data")
             return
             
@@ -60,30 +64,57 @@ class EVPredictionModel:
             self.is_trained = True
             Logger.info(f"Model ready with {len(self.sessions_df)} sessions")
 
-    def get_similar_sessions(self, target_features: np.ndarray, 
+    def get_similar_sessions(self, session_features: Dict, 
                            target_col: str) -> Tuple[float, float]:
-        """Find similar sessions and return mean prediction and runtime."""
+        """Find similar sessions using cosine similarity with categorical support."""
         if not self.is_trained or self.sessions_df.empty:
             return 0.0, 0.0
             
-        start_time = pd.Timestamp.now()
+        # Start timer
+        start_time = time.time()
         
-        # Get feature matrix from historical sessions
-        feature_matrix = self.sessions_df[self.feature_columns].values
+        # Prepare feature columns (temporal + categorical)
+        all_features = self.feature_columns + self.categorical_features
+        
+        # Create current session dataframe for comparison
+        current_session_df = pd.DataFrame([session_features])
+        
+        # Combine historical data with current session for consistent encoding
+        combined_df = pd.concat([
+            self.sessions_df[all_features], 
+            current_session_df[all_features]
+        ], ignore_index=True)
+        
+        # Apply dummy encoding if categorical features present
+        if any(feat in all_features for feat in self.categorical_features):
+            combined_df_encoded = pd.get_dummies(
+                combined_df, 
+                columns=self.categorical_features
+            )
+        else:
+            combined_df_encoded = combined_df
+        
+        # Split back to historical and current
+        historical_encoded = combined_df_encoded.iloc[:-1]
+        current_encoded = combined_df_encoded.iloc[-1:].values
         
         # Calculate cosine similarity
         similarities = cosine_similarity(
-            feature_matrix, 
-            target_features.reshape(1, -1)
+            historical_encoded.values,
+            current_encoded
         ).flatten()
         
-        # Find top N similar sessions
+        # Get top N similar sessions
         top_indices = np.argsort(similarities)[-self.n_similar:]
         similar_values = self.sessions_df.iloc[top_indices][target_col].values
         
-        # Return mean of similar sessions
+        # Calculate mean of top similar sessions
         prediction = np.mean(similar_values)
-        runtime = (pd.Timestamp.now() - start_time).total_seconds()
+        runtime = time.time() - start_time
+        
+        # Clean up
+        del combined_df, combined_df_encoded, historical_encoded
+        del current_encoded, similarities, similar_values
         
         return prediction, runtime
 
@@ -92,18 +123,14 @@ class EVPredictionModel:
         if not self.is_trained:
             return {'kwh': 0.0, 'duration_minutes': 0.0, 'runtime': 0.0}
         
-        # Extract features
-        features = np.array([session_features.get(col, 0.0) 
-                           for col in self.feature_columns])
-        
         # Predict energy
         energy_pred, energy_runtime = self.get_similar_sessions(
-            features, 'kwh'
+            session_features, 'kwh'
         )
         
         # Predict duration
         duration_pred, duration_runtime = self.get_similar_sessions(
-            features, 'duration_minutes'
+            session_features, 'duration_minutes'
         )
         
         return {
@@ -115,7 +142,7 @@ class EVPredictionModel:
     def predict_session_on_arrival(
         self,
         arrival_time: str,
-        user_id: str = None
+        user_id: float = None
     ) -> Dict[str, float]:
         """Predict energy and duration for a session based on arrival time."""
         if not self.is_trained:
@@ -140,7 +167,8 @@ class EVPredictionModel:
             'start_weekday_sin': np.sin(weekday_rad),
             'start_weekday_cos': np.cos(weekday_rad),
             'start_month_sin': np.sin(month_rad),
-            'start_month_cos': np.cos(month_rad)
+            'start_month_cos': np.cos(month_rad),
+            'user_id': user_id or 0.0
         }
 
         # Predict for this session
@@ -148,7 +176,7 @@ class EVPredictionModel:
         
         return {
             'arrival_time': arrival_time,
-            'user_id': user_id or 'unknown',
+            'user_id': user_id or 0.0,
             'predicted_kwh': prediction['kwh'],
             'predicted_duration_minutes': prediction['duration_minutes'],
             'prediction_runtime': prediction['runtime']

@@ -87,6 +87,7 @@ def main():
                         'start_time': session_times[i],
                         'kwh': kwh_values[i],
                         'duration_minutes': duration_values[i] * 60,  # hrs
+                        'user_id': user_ids[i] if i < len(user_ids) else 0.0,
                         'start_hour_sin': np.sin(
                             2 * np.pi * start_time.hour / 24
                         ),
@@ -146,7 +147,7 @@ def main():
                         minutes = np.random.randint(30, 120)
                         arrival_offset = pd.Timedelta(minutes=minutes)
                         arrival_time = current_time + arrival_offset * (i + 1)
-                        user_id = f"user_{np.random.randint(1000, 9999)}"
+                        user_id = float(np.random.randint(1000, 9999))
                         
                         # Predict for this simulated arrival
                         prediction = model.predict_session_on_arrival(

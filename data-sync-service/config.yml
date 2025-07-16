@@ -21,6 +21,7 @@ x-channels:
         split keys:
           kwh_values: "kwh_values"
           duration_values: "duration_values"
+          user_ids: "user_ids"
       - type: "CachedSQLQuery"
         cache keys: ["location", "data_provider", "metric_type"]
         single value: True
