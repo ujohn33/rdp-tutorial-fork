@@ -74,7 +74,7 @@ def main():
                 for stream_name, messages in session_data:
                     for message_id, data in messages:
                         # Update last processed message ID
-                        last_id = message_id.decode('utf-8')
+                        last_id = message_id
                         # Parse session data - new format with arrays
                         session_times = json.loads(data['session_times'])
                         kwh_values = json.loads(data['kwh_values'])
