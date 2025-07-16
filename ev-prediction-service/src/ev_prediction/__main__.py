@@ -60,136 +60,140 @@ def main():
     try:
         while True:
             with redis.StrictRedis(connection_pool=redis_pool) as r:
-                # Read new EV charging sessions
+                # Read new EV charging sessions - read multiple messages
                 session_data = r.xread(
                     streams={ev_config['input_stream']: '$'},
-                    count=1, block=5000  # 5 second timeout
+                    count=10, block=1000  # Read up to 10 messages, 1s timeout
                 )
 
             if session_data:
-                # Parse session data - new format with arrays
-                data = session_data[0][1][-1][1]
-                
-                # Extract arrays from the new format
-                session_times = json.loads(data['session_times'])
-                kwh_values = json.loads(data['kwh_values'])
-                duration_values = json.loads(data['duration_values'])
-                # Handle user_ids safely - might not exist in older data
-                user_ids = json.loads(data.get('user_ids', '[]'))
-                
-                # Ensure user_ids has same length as other arrays
-                if len(user_ids) < len(session_times):
-                    # Pad with default user IDs if missing
-                    padding_length = len(session_times) - len(user_ids)
-                    user_ids.extend([0.0] * padding_length)
+                # Process all received messages
+                for stream_name, messages in session_data:
+                    for message_id, data in messages:
+                        # Parse session data - new format with arrays
+                        session_times = json.loads(data['session_times'])
+                        kwh_values = json.loads(data['kwh_values'])
+                        duration_values = json.loads(data['duration_values'])
+                        # Handle user_ids safely - might not exist in old data
+                        user_ids = json.loads(data.get('user_ids', '[]'))
+                        
+                        # Ensure user_ids has same length as other arrays
+                        if len(user_ids) < len(session_times):
+                            # Pad with default user IDs if missing
+                            padding_length = len(session_times) - len(user_ids)
+                            user_ids.extend([0.0] * padding_length)
 
-                # Reconstruct session objects for the model
-                sessions = []
-                for i in range(len(session_times)):
-                    # Parse the timestamp to extract temporal features
-                    start_time = pd.to_datetime(session_times[i])
-                    
-                    # Create session object with required features
-                    session = {
-                        'start_time': session_times[i],
-                        'kwh': kwh_values[i],
-                        'duration_minutes': duration_values[i] * 60,  # hrs
-                        'user_id': user_ids[i] if i < len(user_ids) else 0.0,
-                        'start_hour_sin': np.sin(
-                            2 * np.pi * start_time.hour / 24
-                        ),
-                        'start_hour_cos': np.cos(
-                            2 * np.pi * start_time.hour / 24
-                        ),
-                        'start_weekday_sin': np.sin(
-                            2 * np.pi * start_time.weekday() / 7
-                        ),
-                        'start_weekday_cos': np.cos(
-                            2 * np.pi * start_time.weekday() / 7
-                        ),
-                        'start_month_sin': np.sin(
-                            2 * np.pi * start_time.month / 12
-                        ),
-                        'start_month_cos': np.cos(
-                            2 * np.pi * start_time.month / 12
+                        # Reconstruct session objects for the model
+                        sessions = []
+                        for i in range(len(session_times)):
+                            # Parse timestamp to extract temporal features
+                            start_time = pd.to_datetime(session_times[i])
+                            
+                            # Create session object with required features
+                            session = {
+                                'start_time': session_times[i],
+                                'kwh': kwh_values[i],
+                                'duration_minutes': duration_values[i] * 60,
+                                'user_id': (user_ids[i]
+                                            if i < len(user_ids) else 0.0),
+                                'start_hour_sin': np.sin(
+                                    2 * np.pi * start_time.hour / 24
+                                ),
+                                'start_hour_cos': np.cos(
+                                    2 * np.pi * start_time.hour / 24
+                                ),
+                                'start_weekday_sin': np.sin(
+                                    2 * np.pi * start_time.weekday() / 7
+                                ),
+                                'start_weekday_cos': np.cos(
+                                    2 * np.pi * start_time.weekday() / 7
+                                ),
+                                'start_month_sin': np.sin(
+                                    2 * np.pi * start_time.month / 12
+                                ),
+                                'start_month_cos': np.cos(
+                                    2 * np.pi * start_time.month / 12
+                                )
+                            }
+                            sessions.append(session)
+
+                        Logger.info(f"Received {len(sessions)} new sessions")
+                        
+                        # Debug: Log session structure
+                        if sessions:
+                            keys = list(sessions[0].keys())
+                            Logger.info(f"Sample session keys: {keys}")
+
+                        # Add sessions to the model's historical database
+                        model.add_sessions(sessions)
+                        
+                        # Debug: Log model state
+                        total_sessions = (
+                            len(model.sessions_df)
+                            if not model.sessions_df.empty else 0
                         )
-                    }
-                    sessions.append(session)
-
-                Logger.info(f"Received {len(sessions)} new sessions")
-                
-                # Debug: Log session structure
-                if sessions:
-                    keys = list(sessions[0].keys())
-                    Logger.info(f"Sample session keys: {keys}")
-
-                # Add sessions to the model's historical database
-                model.add_sessions(sessions)
-                
-                # Debug: Log model state
-                total_sessions = (
-                    len(model.sessions_df)
-                    if not model.sessions_df.empty else 0
-                )
-                Logger.info(
-                    f"Model trained: {model.is_trained}, "
-                    f"Total sessions: {total_sessions}"
-                )
-
-                # Generate predictions if model is trained
-                if model.is_trained:
-                    # Get model performance metrics
-                    metrics = model.get_model_metrics()
-                    if metrics:
-                        Logger.info(f"Model metrics: {metrics}")
-
-                    # Generate predictions for the actual sessions received
-                    predictions = []
-                    
-                    # Generate predictions for each session using timestamps
-                    for i, session_time in enumerate(session_times):
-                        user_id = user_ids[i] if i < len(user_ids) else 0.0
-                        
-                        # Generate prediction for this actual session
-                        prediction = model.predict_session_on_arrival(
-                            session_time,  # Use the actual session timestamp
-                            user_id
+                        Logger.info(
+                            f"Model trained: {model.is_trained}, "
+                            f"Total sessions: {total_sessions}"
                         )
-                        
-                        # Set the prediction timestamp to match the session
-                        prediction['timestamp'] = session_time
-                        predictions.append(prediction)
-                    
-                    # Send predictions to Redis stream
-                    if predictions:
-                        with redis.StrictRedis(
-                            connection_pool=redis_pool
-                        ) as r:
-                            for pred in predictions:
-                                pred_data = {
-                                    # Use session timestamp for prediction
-                                    'timestamp': pred['timestamp'],
-                                    'location': data['location'],
-                                    'data_provider': 'EV_Prediction_Model',
-                                    'arrival_time': pred['arrival_time'],
-                                    'user_id': float(pred['user_id']),
-                                    'predicted_kwh': float(
-                                        pred['predicted_kwh']
-                                    ),
-                                    'predicted_duration_minutes': float(
-                                        pred['predicted_duration_minutes']
-                                    ),
-                                    'prediction_runtime': float(
-                                        pred['prediction_runtime']
-                                    )
-                                }
-                                r.xadd(ev_config['output_stream'], pred_data)
-                        
-                        Logger.info(f"Sent {len(predictions)} predictions")
-                        if predictions:
-                            Logger.info(f"Sample: {predictions[0]}")
-                else:
-                    Logger.warning("No predictions generated")
+
+                        # Generate predictions if model is trained
+                        if model.is_trained:
+                            # Get model performance metrics
+                            metrics = model.get_model_metrics()
+                            if metrics:
+                                Logger.info(f"Model metrics: {metrics}")
+
+                            # Generate predictions for actual sessions received
+                            predictions = []
+                            
+                            # Generate predictions for each session
+                            for i, session_time in enumerate(session_times):
+                                user_id = (user_ids[i]
+                                           if i < len(user_ids) else 0.0)
+                                
+                                # Generate prediction for this actual session
+                                prediction = model.predict_session_on_arrival(
+                                    session_time, user_id
+                                )
+                                
+                                # Set prediction timestamp to match session
+                                prediction['timestamp'] = session_time
+                                predictions.append(prediction)
+                            
+                            # Send predictions to Redis stream
+                            if predictions:
+                                with redis.StrictRedis(
+                                    connection_pool=redis_pool
+                                ) as r_pred:
+                                    for pred in predictions:
+                                        pred_data = {
+                                            'timestamp': pred['timestamp'],
+                                            'location': data['location'],
+                                            'data_provider': 'EV_Prediction_Model',
+                                            'arrival_time': pred['arrival_time'],
+                                            'user_id': float(pred['user_id']),
+                                            'predicted_kwh': float(
+                                                pred['predicted_kwh']
+                                            ),
+                                            'predicted_duration_minutes': float(
+                                                pred['predicted_duration_minutes']
+                                            ),
+                                            'prediction_runtime': float(
+                                                pred['prediction_runtime']
+                                            )
+                                        }
+                                        r_pred.xadd(
+                                            ev_config['output_stream'],
+                                            pred_data
+                                        )
+                                
+                                msg = f"Sent {len(predictions)} predictions"
+                                Logger.info(msg)
+                                if predictions:
+                                    Logger.info(f"Sample: {predictions[0]}")
+                        else:
+                            Logger.warning("No predictions generated")
 
             # Update frequency control
             time.sleep(ev_config.get('update_frequency_minutes', 15) * 60)
