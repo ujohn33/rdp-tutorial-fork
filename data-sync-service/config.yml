@@ -44,9 +44,9 @@ x-channels:
       _default: "KeepEncoding"
       timestamp: "DatetimeString"
       arrival_time: "DatetimeString"
-      predicted_kwh: "Float"
-      predicted_duration_minutes: "Float"
-      prediction_runtime: "Float"
+      predicted_kwh: "KeepEncoding"
+      predicted_duration_minutes: "KeepEncoding"
+      prediction_runtime: "KeepEncoding"
     steps: &ev-predictions-steps
       - type: "SplitByKey"
         always include: ["timestamp", "arrival_time", "location", "data_provider", "user_id", "prediction_runtime"]
