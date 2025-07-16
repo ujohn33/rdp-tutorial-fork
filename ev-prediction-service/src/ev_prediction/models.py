@@ -74,22 +74,32 @@ class EVPredictionModel:
         start_time = time.time()
         
         # Prepare feature columns (temporal + categorical)
-        all_features = self.feature_columns + self.categorical_features
+        # Only use features that are available in historical data
+        available_features = [f for f in self.feature_columns
+                              if f in self.sessions_df.columns]
+        available_categorical = [f for f in self.categorical_features
+                                 if f in self.sessions_df.columns]
+        all_features = available_features + available_categorical
         
         # Create current session dataframe for comparison
         current_session_df = pd.DataFrame([session_features])
         
+        # Only use features that exist in both datasets
+        current_session_features = {k: v for k, v in session_features.items()
+                                    if k in all_features}
+        current_session_df = pd.DataFrame([current_session_features])
+        
         # Combine historical data with current session for consistent encoding
         combined_df = pd.concat([
-            self.sessions_df[all_features], 
-            current_session_df[all_features]
+            self.sessions_df[all_features],
+            current_session_df[list(current_session_features.keys())]
         ], ignore_index=True)
         
         # Apply dummy encoding if categorical features present
-        if any(feat in all_features for feat in self.categorical_features):
+        if available_categorical:
             combined_df_encoded = pd.get_dummies(
-                combined_df, 
-                columns=self.categorical_features
+                combined_df,
+                columns=available_categorical
             )
         else:
             combined_df_encoded = combined_df
@@ -118,7 +128,8 @@ class EVPredictionModel:
         
         return prediction, runtime
 
-    def predict_single_session(self, session_features: Dict) -> Dict[str, float]:
+    def predict_single_session(self, session_features: Dict
+                               ) -> Dict[str, float]:
         """Predict energy and duration for a single session."""
         if not self.is_trained:
             return {'kwh': 0.0, 'duration_minutes': 0.0, 'runtime': 0.0}
