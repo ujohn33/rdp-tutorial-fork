@@ -74,7 +74,14 @@ def main():
                 session_times = json.loads(data['session_times'])
                 kwh_values = json.loads(data['kwh_values'])
                 duration_values = json.loads(data['duration_values'])
+                # Handle user_ids safely - might not exist in older data
                 user_ids = json.loads(data.get('user_ids', '[]'))
+                
+                # Ensure user_ids has same length as other arrays
+                if len(user_ids) < len(session_times):
+                    # Pad with default user IDs if missing
+                    padding_length = len(session_times) - len(user_ids)
+                    user_ids.extend([0.0] * padding_length)
 
                 # Reconstruct session objects for the model
                 sessions = []
@@ -178,10 +185,11 @@ def main():
                                 }
                                 r.xadd(ev_config['output_stream'], pred_data)
                         
-                        Logger.info(
-                            f"Sent {len(predictions)} session predictions "
-                            f"to Redis stream"
-                        )
+                        Logger.info(f"Sent {len(predictions)} predictions")
+                        if predictions:
+                            Logger.info(f"Sample: {predictions[0]}")
+                else:
+                    Logger.warning("No predictions generated")
 
             # Update frequency control
             time.sleep(ev_config.get('update_frequency_minutes', 15) * 60)
