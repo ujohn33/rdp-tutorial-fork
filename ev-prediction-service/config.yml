@@ -4,9 +4,6 @@ ev_prediction:
   input_stream: "ev.charging.sessions"
   output_stream: "ev.predictions"
   location: "Genk Henri Esserslaan 47"
-  # Model parameters
-  prediction_horizon_hours: 24
-  update_frequency_minutes: 1  # Generate predictions every minute for testing
 
 redis:
   host: "redis"

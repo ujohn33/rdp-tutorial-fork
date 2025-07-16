@@ -203,7 +203,7 @@ def main():
             else:
                 # No new messages, short sleep to avoid busy waiting
                 Logger.debug("No new messages, waiting...")
-                time.sleep(1)
+                time.sleep(1)  # Short sleep to avoid busy waiting
 
     except KeyboardInterrupt:
         Logger.info('Stopping EV prediction service...')
