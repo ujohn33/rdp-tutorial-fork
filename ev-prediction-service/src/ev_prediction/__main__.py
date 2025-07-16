@@ -57,12 +57,15 @@ def main():
     ev_config = config['ev_prediction']
     model = EVPredictionModel()
 
+    # Track last processed message ID
+    last_id = '0'  # Start from beginning of stream
+
     try:
         while True:
             with redis.StrictRedis(connection_pool=redis_pool) as r:
                 # Read new EV charging sessions - read multiple messages
                 session_data = r.xread(
-                    streams={ev_config['input_stream']: '$'},
+                    streams={ev_config['input_stream']: last_id},
                     count=10, block=1000  # Read up to 10 messages, 1s timeout
                 )
 
@@ -70,6 +73,8 @@ def main():
                 # Process all received messages
                 for stream_name, messages in session_data:
                     for message_id, data in messages:
+                        # Update last processed message ID
+                        last_id = message_id.decode('utf-8')
                         # Parse session data - new format with arrays
                         session_times = json.loads(data['session_times'])
                         kwh_values = json.loads(data['kwh_values'])
