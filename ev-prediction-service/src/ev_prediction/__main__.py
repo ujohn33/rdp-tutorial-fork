@@ -151,9 +151,9 @@ def main():
                     # Send predictions to Redis
                     with redis.StrictRedis(connection_pool=redis_pool) as r:
                         pred_data = {
-                            'timestamp': data['timestamp'],
-                            'location': data['location'],
-                            'data_provider': 'EV_Prediction_Model',
+                            'timestamp': json.dumps(data['timestamp']),
+                            'location': json.dumps(data['location']),
+                            'data_provider': json.dumps('EV_Prediction_Model'),
                             'hourly_timestamps': json.dumps(timestamps),
                             'hourly_energy_kwh': json.dumps(energy_pred),
                             'hourly_duration_min': json.dumps(duration_pred),
