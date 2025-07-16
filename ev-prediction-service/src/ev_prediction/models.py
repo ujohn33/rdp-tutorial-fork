@@ -112,78 +112,46 @@ class EVPredictionModel:
             'runtime': energy_runtime + duration_runtime
         }
 
-    def predict_hourly_demand(
+    def predict_session_on_arrival(
         self,
-        prediction_hours: int = 24,
-        base_time: datetime = None
-    ) -> Tuple[List[str], List[float], List[float]]:
-        """Predict hourly energy and duration demand."""
+        arrival_time: str,
+        user_id: str = None
+    ) -> Dict[str, float]:
+        """Predict energy and duration for a session based on arrival time."""
         if not self.is_trained:
             Logger.warning("Model not trained yet")
-            return [], [], []
-
-        # Use provided base_time or current time as fallback
-        start_time = base_time if base_time else datetime.now()
-        timestamps = []
-        hourly_energy = []
-        hourly_duration = []
-
-        for h in range(prediction_hours):
-            ts = start_time + timedelta(hours=h)
-            timestamps.append(ts.isoformat())
-
-            # Create cyclical features for this hour
-            hour_rad = 2 * np.pi * ts.hour / 24
-            weekday_rad = 2 * np.pi * ts.weekday() / 7
-            month_rad = 2 * np.pi * ts.month / 12
-
-            session_features = {
-                'start_hour_sin': np.sin(hour_rad),
-                'start_hour_cos': np.cos(hour_rad),
-                'start_weekday_sin': np.sin(weekday_rad),
-                'start_weekday_cos': np.cos(weekday_rad),
-                'start_month_sin': np.sin(month_rad),
-                'start_month_cos': np.cos(month_rad)
+            return {
+                'kwh': 0.0,
+                'duration_minutes': 0.0,
+                'arrival_time': arrival_time
             }
 
-            # Predict for this hour
-            prediction = self.predict_single_session(session_features)
-            
-            # Estimate sessions per hour (configurable parameter)
-            sessions_per_hour = 2.5
-            hourly_energy.append(prediction['kwh'] * sessions_per_hour)
-            hourly_duration.append(
-                prediction['duration_minutes'] * sessions_per_hour
-            )
+        # Parse arrival time
+        arrival_dt = pd.to_datetime(arrival_time)
+        
+        # Create cyclical features for arrival time
+        hour_rad = 2 * np.pi * arrival_dt.hour / 24
+        weekday_rad = 2 * np.pi * arrival_dt.weekday() / 7
+        month_rad = 2 * np.pi * arrival_dt.month / 12
 
-        return timestamps, hourly_energy, hourly_duration
+        session_features = {
+            'start_hour_sin': np.sin(hour_rad),
+            'start_hour_cos': np.cos(hour_rad),
+            'start_weekday_sin': np.sin(weekday_rad),
+            'start_weekday_cos': np.cos(weekday_rad),
+            'start_month_sin': np.sin(month_rad),
+            'start_month_cos': np.cos(month_rad)
+        }
 
-    def predict_daily_totals(
-        self,
-        days: int = 7,
-        base_time: datetime = None
-    ) -> Dict[str, List]:
-        """Predict daily totals for the next N days."""
-        timestamps, hourly_energy, hourly_duration = \
-            self.predict_hourly_demand(24 * days, base_time)
-
-        # Group by day
-        daily_energy = []
-        daily_duration = []
-        daily_timestamps = []
-
-        for day in range(days):
-            day_start = day * 24
-            day_end = (day + 1) * 24
-            daily_energy.append(sum(hourly_energy[day_start:day_end]))
-            daily_duration.append(sum(hourly_duration[day_start:day_end]))
-            day_ts = datetime.now() + timedelta(days=day)
-            daily_timestamps.append(day_ts.strftime('%Y-%m-%d'))
-
+        # Predict for this session
+        prediction = self.predict_single_session(session_features)
+        
         return {
-            'timestamps': daily_timestamps,
-            'energy_kwh': daily_energy,
-            'duration_minutes': daily_duration
+            'arrival_time': arrival_time,
+            'user_id': user_id or 'unknown',
+            'predicted_kwh': prediction['kwh'],
+            'predicted_duration_minutes': prediction['duration_minutes'],
+            'prediction_runtime': prediction['runtime']
         }
 
     def get_model_metrics(self) -> Dict[str, float]:

@@ -12,14 +12,15 @@ x-channels:
       session_times: "JSONListWithDatetimeStrings"
       kwh_values: "JSON"
       duration_values: "JSON"
+      user_ids: "JSON"
     steps: &ev-sessions-steps
       - type: "SplitByKey"
         always include: ["timestamp", "session_times", "location", "data_provider"]
         destination key: "value"
         source output key: "metric_type"
         split keys:
-          kwh: "kwh_values"
-          duration_hours: "duration_values"
+          kwh_values: "kwh_values"
+          duration_values: "duration_values"
       - type: "CachedSQLQuery"
         cache keys: ["location", "data_provider", "metric_type"]
         single value: True
@@ -40,31 +41,30 @@ x-channels:
   ## ---------------------------------------------------------------------------
   ev-predictions:
     encoding: &ev-predictions-encoding
-      _default: "JSON"
-      timestamp: "JSONDatetimeString"
-      hourly_timestamps: "JSON"
-      hourly_energy_kwh: "JSON"
-      hourly_duration_min: "JSON"
-      daily_timestamps: "JSON"
-      daily_energy_kwh: "JSON"
-      daily_duration_min: "JSON"
+      _default: "KeepEncoding"
+      timestamp: "DatetimeString"
+      arrival_time: "DatetimeString"
+      predicted_kwh: "Float"
+      predicted_duration_minutes: "Float"
+      prediction_runtime: "Float"
     steps: &ev-predictions-steps
       - type: "SplitByKey"
-        always include: ["timestamp", "location", "data_provider"]
+        always include: ["timestamp", "arrival_time", "location", "data_provider", "user_id", "prediction_runtime"]
         destination key: "value"
         source output key: "prediction_type"
+        split keys:
+          predicted_kwh: "predicted_kwh"
+          predicted_duration_minutes: "predicted_duration_minutes"
       - type: "CachedSQLQuery"
         cache keys: ["location", "data_provider", "prediction_type"]
         single value: True
         query: "SELECT get_or_create_data_point_id(:prediction_type, NULL, :location, :data_provider) AS dp_id;"
-      - type: "UnpackArrayValues"
-        unpack keys: ["hourly_timestamps", "value"]
     data sink: &ev-predictions-sink
       table: "forecasts"
       update duplicate values: True
       columns:
         dp_id: "dp_id"
-        obs_time: "hourly_timestamps"
+        obs_time: "arrival_time"
         fc_time: "timestamp"
         value: "value"
 

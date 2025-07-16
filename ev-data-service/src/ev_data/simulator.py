@@ -1,5 +1,6 @@
 import logging
 import pandas as pd
+import numpy as np
 from datetime import datetime
 from typing import Dict, Any
 
@@ -64,11 +65,14 @@ class EVDataSimulator:
         session_times = []
         kwh_values = []
         duration_values = []
+        user_ids = []
         
         for _, row in batch.iterrows():
             session_times.append(row['Start time'].isoformat())
             kwh_values.append(float(row['kwh']))
             duration_values.append(float(row['Duration_hours']))
+            # Generate realistic user IDs
+            user_ids.append(f"user_{np.random.randint(1000, 9999)}")
         
         # Convert to streaming format compatible with RedSQL
         session_data = {
@@ -77,7 +81,8 @@ class EVDataSimulator:
             'data_provider': 'EV_Data_Simulator',
             'session_times': session_times,
             'kwh_values': kwh_values,
-            'duration_values': duration_values
+            'duration_values': duration_values,
+            'user_ids': user_ids
         }
             
         self.current_index = end_index

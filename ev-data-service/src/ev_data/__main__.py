@@ -69,7 +69,8 @@ def main():
                     'kwh_values': json.dumps(batch_data['kwh_values']),
                     'duration_values': json.dumps(
                         batch_data['duration_values']
-                    )
+                    ),
+                    'user_ids': json.dumps(batch_data['user_ids'])
                 }
                 r.xadd(simulator.output_stream, stream_data)
                 num_points = len(batch_data['session_times'])

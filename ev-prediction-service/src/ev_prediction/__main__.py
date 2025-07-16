@@ -74,6 +74,7 @@ def main():
                 session_times = json.loads(data['session_times'])
                 kwh_values = json.loads(data['kwh_values'])
                 duration_values = json.loads(data['duration_values'])
+                user_ids = json.loads(data.get('user_ids', '[]'))
 
                 # Reconstruct session objects for the model
                 sessions = []
@@ -134,41 +135,52 @@ def main():
                     if metrics:
                         Logger.info(f"Model metrics: {metrics}")
 
-                    # Use the latest session timestamp as base for predictions
-                    latest_session_time = max(
-                        pd.to_datetime(ts) for ts in session_times
-                    )
+                    # Generate predictions for future arrivals
+                    # Simulate new arrivals by predicting for sessions
+                    predictions = []
+                    current_time = pd.to_datetime(session_times[-1])
                     
-                    # Hourly predictions starting from latest session time
-                    timestamps, energy_pred, duration_pred = \
-                        model.predict_hourly_demand(24, latest_session_time)
-
-                    # Daily predictions
-                    daily_pred = model.predict_daily_totals(
-                        7, latest_session_time
-                    )
-
-                    # Send predictions to Redis
-                    with redis.StrictRedis(connection_pool=redis_pool) as r:
-                        pred_data = {
-                            'timestamp': json.dumps(data['timestamp']),
-                            'location': json.dumps(data['location']),
-                            'data_provider': json.dumps('EV_Prediction_Model'),
-                            'hourly_timestamps': json.dumps(timestamps),
-                            'hourly_energy_kwh': json.dumps(energy_pred),
-                            'hourly_duration_min': json.dumps(duration_pred),
-                            'daily_timestamps': json.dumps(
-                                daily_pred['timestamps']
-                            ),
-                            'daily_energy_kwh': json.dumps(
-                                daily_pred['energy_kwh']
-                            ),
-                            'daily_duration_min': json.dumps(
-                                daily_pred['duration_minutes']
-                            )
-                        }
-                        r.xadd(ev_config['output_stream'], pred_data)
-                        Logger.info("Sent predictions to Redis stream")
+                    # Generate predictions for next sessions (arrivals)
+                    for i in range(5):  # Predict for next 5 potential arrivals
+                        # Simulate arrival times (every 30-120 minutes)
+                        minutes = np.random.randint(30, 120)
+                        arrival_offset = pd.Timedelta(minutes=minutes)
+                        arrival_time = current_time + arrival_offset * (i + 1)
+                        user_id = f"user_{np.random.randint(1000, 9999)}"
+                        
+                        # Predict for this simulated arrival
+                        prediction = model.predict_session_on_arrival(
+                            arrival_time.isoformat(),
+                            user_id
+                        )
+                        predictions.append(prediction)
+                    
+                    # Send predictions to Redis stream
+                    if predictions:
+                        with redis.StrictRedis(
+                            connection_pool=redis_pool
+                        ) as r:
+                            for pred in predictions:
+                                pred_data = {
+                                    'timestamp': data['timestamp'],
+                                    'location': data['location'],
+                                    'data_provider': 'EV_Prediction_Model',
+                                    'arrival_time': pred['arrival_time'],
+                                    'user_id': pred['user_id'],
+                                    'predicted_kwh': pred['predicted_kwh'],
+                                    'predicted_duration_minutes': pred[
+                                        'predicted_duration_minutes'
+                                    ],
+                                    'prediction_runtime': pred[
+                                        'prediction_runtime'
+                                    ]
+                                }
+                                r.xadd(ev_config['output_stream'], pred_data)
+                        
+                        Logger.info(
+                            f"Sent {len(predictions)} session predictions "
+                            f"to Redis stream"
+                        )
 
             # Update frequency control
             time.sleep(ev_config.get('update_frequency_minutes', 15) * 60)
