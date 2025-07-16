@@ -58,7 +58,7 @@ def main():
     model = EVPredictionModel()
 
     # Track last processed message ID
-    last_id = '0'  # Start from beginning of stream
+    last_id = '$'  # Start from latest messages (new messages only)
 
     try:
         while True:
@@ -70,6 +70,7 @@ def main():
                 )
 
             if session_data:
+                Logger.info(f"Processing {len(session_data[0][1])} messages from stream")
                 # Process all received messages
                 for stream_name, messages in session_data:
                     for message_id, data in messages:
@@ -201,6 +202,7 @@ def main():
                             Logger.warning("No predictions generated")
             else:
                 # No new messages, short sleep to avoid busy waiting
+                Logger.debug("No new messages, waiting...")
                 time.sleep(1)
 
     except KeyboardInterrupt:
