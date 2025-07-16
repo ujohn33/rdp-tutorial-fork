@@ -199,9 +199,9 @@ def main():
                                     Logger.info(f"Sample: {predictions[0]}")
                         else:
                             Logger.warning("No predictions generated")
-
-            # Update frequency control
-            time.sleep(ev_config.get('update_frequency_minutes', 15) * 60)
+            else:
+                # No new messages, short sleep to avoid busy waiting
+                time.sleep(1)
 
     except KeyboardInterrupt:
         Logger.info('Stopping EV prediction service...')
