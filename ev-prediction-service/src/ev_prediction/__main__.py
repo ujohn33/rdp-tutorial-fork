@@ -174,14 +174,16 @@ def main():
                                     'location': data['location'],
                                     'data_provider': 'EV_Prediction_Model',
                                     'arrival_time': pred['arrival_time'],
-                                    'user_id': pred['user_id'],
-                                    'predicted_kwh': pred['predicted_kwh'],
-                                    'predicted_duration_minutes': pred[
-                                        'predicted_duration_minutes'
-                                    ],
-                                    'prediction_runtime': pred[
-                                        'prediction_runtime'
-                                    ]
+                                    'user_id': float(pred['user_id']),
+                                    'predicted_kwh': float(
+                                        pred['predicted_kwh']
+                                    ),
+                                    'predicted_duration_minutes': float(
+                                        pred['predicted_duration_minutes']
+                                    ),
+                                    'prediction_runtime': float(
+                                        pred['prediction_runtime']
+                                    )
                                 }
                                 r.xadd(ev_config['output_stream'], pred_data)
                         
