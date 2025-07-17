@@ -130,7 +130,7 @@
           "refId": "A"
         }
       ],
-      "title": "Daily Energy Forecast",
+      "title": "Daily Energy Demand (Session Simulation)",
       "type": "timeseries"
     },
     {
